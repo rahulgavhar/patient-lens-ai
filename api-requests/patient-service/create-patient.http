@@ -1,0 +1,15 @@
+### Creates a new patient entity in the Patient Service
+//@no-log
+POST {{serverUrl}}/api/patients
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "John Dobhal",
+  "dateOfBirth": "1990-01-01",
+  "address": "123 Main St, Anytown, USA",
+  "email": "test10@test.com",
+  "registeredDate": "2024-06-15"
+}
+
+###

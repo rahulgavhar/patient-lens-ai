@@ -1,0 +1,15 @@
+### Updates a patient record in the patient service.
+//@no-log
+PUT {{serverUrl}}/api/patients/123e4567-e89b-12d3-a456-426614174000
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "John Lodha",
+  "dateOfBirth": "1990-01-01",
+  "address": "123 Main St, Anytown, USA",
+  "email": "test@test.com",
+  "registeredDate": "2024-06-15"
+}
+
+###

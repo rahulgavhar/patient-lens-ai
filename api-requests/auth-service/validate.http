@@ -1,0 +1,4 @@
+### GET request to validate the token
+//@no-log
+GET {{serverUrl}}/auth/validate
+Authorization: Bearer {{token}}
