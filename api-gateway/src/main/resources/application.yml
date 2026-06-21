@@ -9,7 +9,7 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "http://localhost:5173,https://patient-lens.onrender.com"
+            allowedOrigins: "http://localhost:5173,https://patient-lens-ai.onrender.com"
             allowedMethods:
               - GET
               - POST

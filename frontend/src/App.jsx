@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, ShieldAlert, LogOut, Lock, Mail, Activity } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldAlert, LogOut, Lock, Mail, Activity, FileText, UserCheck } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Patients from './components/Patients';
+import PatientRecords from './components/PatientRecords';
+import Doctors from './components/Doctors';
 import BookingSaga from './components/BookingSaga';
 
 export default function App() {
@@ -161,6 +163,14 @@ export default function App() {
               <Users />
               <span>Patient Registry</span>
             </li>
+            <li className={`nav-item ${activeTab === 'patient-records' ? 'active' : ''}`} onClick={() => setActiveTab('patient-records')}>
+              <FileText />
+              <span>Patient Charts</span>
+            </li>
+            <li className={`nav-item ${activeTab === 'doctors' ? 'active' : ''}`} onClick={() => setActiveTab('doctors')}>
+              <UserCheck />
+              <span>Specialist Network</span>
+            </li>
             <li className={`nav-item ${activeTab === 'booking' ? 'active' : ''}`} onClick={() => setActiveTab('booking')}>
               <ShieldAlert />
               <span>Saga Appointment Portal</span>
@@ -190,6 +200,12 @@ export default function App() {
         )}
         {activeTab === 'patients' && (
           <Patients token={token} patients={patients} onPatientCreated={(newP) => setPatients(prev => [...prev, newP])} />
+        )}
+        {activeTab === 'patient-records' && (
+          <PatientRecords token={token} patients={patients} />
+        )}
+        {activeTab === 'doctors' && (
+          <Doctors token={token} doctors={doctors} onDoctorCreated={(newD) => setDoctors(prev => [...prev, newD])} />
         )}
         {activeTab === 'booking' && (
           <BookingSaga token={token} patients={patients} doctors={doctors} onBookingComplete={fetchPatients} />
