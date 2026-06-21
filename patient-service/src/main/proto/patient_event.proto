@@ -10,4 +10,7 @@ message PatientEvent {
   string email = 3;            // Patient email
   string eventType = 4;        // Type of event, e.g., "PATIENT_CREATED"
   int64 timestamp = 5;         // Epoch milliseconds for event time
+  string bloodGroup = 6;
+  double height = 7;
+  double weight = 8;
 }

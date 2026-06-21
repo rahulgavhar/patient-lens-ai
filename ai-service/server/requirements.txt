@@ -31,3 +31,6 @@ tqdm
 
 # Logging
 loguru
+
+# Database Connectivity
+psycopg2-binary

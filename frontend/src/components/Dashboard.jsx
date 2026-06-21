@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Users, UserCheck, Receipt, DollarSign, Activity } from 'lucide-react';
 
-export default function Dashboard({ token, patients, doctors }) {
+export default function Dashboard({ token, userRole, patients, doctors }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -44,12 +44,19 @@ export default function Dashboard({ token, patients, doctors }) {
     return sum;
   }, 0);
 
+  const getGreeting = () => {
+    if (userRole === 'ADMIN') return 'Welcome back, System Administrator';
+    if (userRole === 'DOCTOR') return 'Welcome back, Clinical Specialist';
+    if (userRole === 'PATIENT') return 'Welcome back, Patient Portal User';
+    return 'Welcome to PatientLens AI';
+  };
+
   return (
     <div className="fade-in">
       <div className="app-header">
         <div>
           <h2>Dashboard</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>Welcome to PatientLens AI control panel.</p>
+          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>{getGreeting()}. Control panel is configured for your role access permissions.</p>
         </div>
       </div>
 

@@ -67,3 +67,17 @@ spring:
               filters:
                 - StripPrefix=1
                 - JwtValidation
+            - id: ai-service-route
+              uri: http://ai-service:4010
+              predicates:
+                - Path=/api/ai/**
+              filters:
+                - StripPrefix=1
+                - JwtValidation
+            - id: analytics-service-route
+              uri: http://analytics-service:4009
+              predicates:
+                - Path=/api/analytics/**
+              filters:
+                - StripPrefix=1
+                - JwtValidation

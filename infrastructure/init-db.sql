@@ -4,3 +4,5 @@ CREATE DATABASE "doctor-service-db";
 CREATE DATABASE "appointment-service-db";
 CREATE DATABASE "payment-service-db";
 CREATE DATABASE "notification-service-db";
+CREATE DATABASE "analytics-service-db";
+CREATE DATABASE "ai-service-db";

@@ -125,6 +125,7 @@ services:
       - billing-service
       - doctor-service
       - appointment-service
+      - ai-service
     environment:
       AUTH_SERVICE_URL: http://auth-service:4005
 
@@ -189,4 +190,40 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_SQL_INIT_MODE: always
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  analytics-service:
+    build:
+      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/analytics-service
+      dockerfile: Dockerfile
+    container_name: analytics-service
+    ports:
+      - "4009:4009"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/analytics-service-db
+      SPRING_DATASOURCE_USERNAME: admin_user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+  ai-service:
+    build:
+      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/ai-service
+      dockerfile: Dockerfile
+    container_name: ai-service
+    ports:
+      - "4010:4010"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - C:/Users/rahul/IdeaProjects/patient-lens-ai/ai-service/.env
+    environment:
+      DATABASE_URL: postgresql://admin_user:password@postgres:5432/ai-service-db
+      EMBEDDING_PROVIDER: local
+
 

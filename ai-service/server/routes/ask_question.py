@@ -8,6 +8,7 @@ from langchain_core.retrievers import BaseRetriever
 from pinecone import Pinecone
 from loguru import logger
 from dotenv import load_dotenv
+from server.modules.database import save_chat, get_chat_history
 from typing import List
 import os
 
@@ -64,8 +65,26 @@ async def ask_question(question: str = Form(...)):
         llm_chain = get_llm_chain(retriever)
         response = query_chain(llm_chain, question)
         logger.info(f"Response: {response}")
+        
+        # Save chat interaction in database
+        try:
+            ans = response.get("answer", "")
+            save_chat(question, ans)
+        except Exception as db_err:
+            logger.error(f"Failed to persist chat record in Postgres: {db_err}")
+
         return JSONResponse(content=response)
 
     except Exception as e:
         logger.error(f"Error in ask_question: {e}")
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+@router.get("/chat_history")
+async def chat_history():
+    try:
+        logger.info("Fetching chat history from database")
+        history = get_chat_history()
+        return JSONResponse(content=history)
+    except Exception as e:
+        logger.error(f"Error in fetching chat history: {e}")
         return JSONResponse(content={"error": str(e)}, status_code=500)

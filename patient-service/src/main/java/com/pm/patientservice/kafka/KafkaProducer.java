@@ -32,6 +32,9 @@ public class KafkaProducer {
                 .setEmail(patient.getEmail())
                 .setEventType(eventType)
                 .setTimestamp(Instant.now().toEpochMilli())
+                .setBloodGroup(patient.getBloodGroup() != null ? patient.getBloodGroup() : "")
+                .setHeight(patient.getHeight() != null ? patient.getHeight() : 0.0)
+                .setWeight(patient.getWeight() != null ? patient.getWeight() : 0.0)
                 .build();
 
         try {

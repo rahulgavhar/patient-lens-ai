@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from server.middlewares.exception_handlers import catch_exception_middleware
+from server.middlewares.auth_middleware import role_authorization_middleware
 from server.routes.upload_pdfs import router as upload_router
 from server.routes.ask_question import router as ask_router
 
@@ -17,6 +18,7 @@ app.add_middleware(
 
 # middleware exception handlers
 app.middleware("http")(catch_exception_middleware)
+app.middleware("http")(role_authorization_middleware)
 
 # Health check endpoint
 @app.get("/")
