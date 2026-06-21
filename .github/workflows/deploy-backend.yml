@@ -33,7 +33,12 @@ jobs:
 
     - name: Build and Package Microservices
       run: |
-        mvn clean package -DskipTests
+        for service in auth-service api-gateway patient-service doctor-service appointment-service billing-service analytics-service payment-service notification-service medical-record-service; do
+          echo "================================"
+          echo "Building $service..."
+          echo "================================"
+          mvn -f "$service/pom.xml" clean package -DskipTests
+        done
 
     - name: Configure AWS Credentials
       uses: aws-actions/configure-aws-credentials@v4

@@ -63,7 +63,7 @@ def _get_index():
 
 
 # Load PDF, split into chunks, generate embeddings, and upsert to Pinecone
-def load_vectorstore(uploaded_files):
+def load_vectorstore(uploaded_files, namespace="default"):
     index = _get_index()
     embed_model = create_embedding_model()
     file_paths = []
@@ -92,12 +92,12 @@ def load_vectorstore(uploaded_files):
         except Exception as embedding_error:
             raise ValueError(format_embedding_error(embedding_error)) from embedding_error
 
-        with tqdm(total=len(embeddings), desc="Upserting to Pinecone") as pbar:
+        with tqdm(total=len(embeddings), desc=f"Upserting to Pinecone namespace: {namespace}") as pbar:
             for i in range(0, len(embeddings), 100):
                 batch_embeddings = embeddings[i : i + 100]
                 batch_ids = ids[i : i + 100]
                 batch_metadatas = metadatas[i : i + 100]
-                index.upsert(vectors=list(zip(batch_ids, batch_embeddings, batch_metadatas)))
+                index.upsert(vectors=list(zip(batch_ids, batch_embeddings, batch_metadatas)), namespace=namespace)
                 pbar.update(len(batch_embeddings))
 
         print("Finished processing:", file_path)

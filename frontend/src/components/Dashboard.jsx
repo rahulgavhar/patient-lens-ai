@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Users, UserCheck, Receipt, DollarSign, Activity } from 'lucide-react';
+import { Users, UserCheck, Receipt, DollarSign, Activity, CalendarCheck } from 'lucide-react';
 
 export default function Dashboard({ token, userRole, patients, doctors }) {
+  const isPatient = userRole === 'PATIENT';
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -47,8 +48,13 @@ export default function Dashboard({ token, userRole, patients, doctors }) {
   const getGreeting = () => {
     if (userRole === 'ADMIN') return 'Welcome back, System Administrator';
     if (userRole === 'DOCTOR') return 'Welcome back, Clinical Specialist';
-    if (userRole === 'PATIENT') return 'Welcome back, Patient Portal User';
+    if (userRole === 'PATIENT') return 'Welcome to your Health Portal';
     return 'Welcome to PatientLens AI';
+  };
+
+  const getSubtitle = () => {
+    if (isPatient) return 'View your appointments, payments, and health activity at a glance.';
+    return 'Control panel is configured for your role access permissions.';
   };
 
   return (
@@ -56,76 +62,131 @@ export default function Dashboard({ token, userRole, patients, doctors }) {
       <div className="app-header">
         <div>
           <h2>Dashboard</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>{getGreeting()}. Control panel is configured for your role access permissions.</p>
+          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>{getGreeting()}. {getSubtitle()}</p>
         </div>
       </div>
 
       <div className="metrics-grid">
-        <div className="metric-card glass">
-          <div className="metric-info">
-            <div>
-              <div className="metric-title">Total Patients</div>
-              <div className="metric-value">{patients.length}</div>
+        {/* Card 1: Total Patients (Admin/Doctor) OR My Payments (Patient) */}
+        {isPatient ? (
+          <div className="metric-card glass">
+            <div className="metric-info">
+              <div>
+                <div className="metric-title">My Payments</div>
+                <div className="metric-value">{invoices.filter(i => i.status === 'PAID').length}</div>
+              </div>
+              <div className="metric-icon-wrapper" style={{ color: 'var(--color-success)', background: 'rgba(16, 185, 129, 0.1)' }}>
+                <Receipt size={24} />
+              </div>
             </div>
-            <div className="metric-icon-wrapper">
-              <Users size={24} />
+            <div className="metric-trend">
+              <span className="trend-up">Completed</span>
             </div>
           </div>
-          <div className="metric-trend">
-            <span className="trend-up">Active in system</span>
+        ) : (
+          <div className="metric-card glass">
+            <div className="metric-info">
+              <div>
+                <div className="metric-title">Total Patients</div>
+                <div className="metric-value">{patients.length}</div>
+              </div>
+              <div className="metric-icon-wrapper">
+                <Users size={24} />
+              </div>
+            </div>
+            <div className="metric-trend">
+              <span className="trend-up">Active in system</span>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="metric-card glass">
-          <div className="metric-info">
-            <div>
-              <div className="metric-title">Available Doctors</div>
-              <div className="metric-value">{doctors.length}</div>
+        {/* Card 2: Available Doctors (Admin/Doctor) OR Amount Paid (Patient) */}
+        {isPatient ? (
+          <div className="metric-card glass">
+            <div className="metric-info">
+              <div>
+                <div className="metric-title">Total Spent</div>
+                <div className="metric-value">${totalBilling.toFixed(2)}</div>
+              </div>
+              <div className="metric-icon-wrapper" style={{ color: 'var(--color-warning)', background: 'rgba(245, 158, 11, 0.1)' }}>
+                <DollarSign size={24} />
+              </div>
             </div>
-            <div className="metric-icon-wrapper" style={{ color: 'var(--color-secondary)', background: 'rgba(99, 102, 241, 0.1)' }}>
-              <UserCheck size={24} />
+            <div className="metric-trend">
+              <span className="trend-up">Payment received</span>
             </div>
           </div>
-          <div className="metric-trend">
-            <span className="trend-up">Onboarded Specialists</span>
+        ) : (
+          <div className="metric-card glass">
+            <div className="metric-info">
+              <div>
+                <div className="metric-title">Available Doctors</div>
+                <div className="metric-value">{doctors.length}</div>
+              </div>
+              <div className="metric-icon-wrapper" style={{ color: 'var(--color-secondary)', background: 'rgba(99, 102, 241, 0.1)' }}>
+                <UserCheck size={24} />
+              </div>
+            </div>
+            <div className="metric-trend">
+              <span className="trend-up">Onboarded Specialists</span>
+            </div>
           </div>
-        </div>
+        )}
 
+        {/* Card 3: Paid Invoices */}
         <div className="metric-card glass">
           <div className="metric-info">
             <div>
-              <div className="metric-title">Paid Invoices</div>
+              <div className="metric-title">{isPatient ? 'Invoices' : 'Paid Invoices'}</div>
               <div className="metric-value">{invoices.filter(i => i.status === 'PAID').length}</div>
             </div>
-            <div className="metric-icon-wrapper" style={{ color: 'var(--color-success)', background: 'rgba(16, 185, 129, 0.1)' }}>
+            <div className="metric-icon-wrapper" style={{ color: isPatient ? 'var(--color-primary)' : 'var(--color-success)', background: isPatient ? 'rgba(6, 182, 212, 0.1)' : 'rgba(16, 185, 129, 0.1)' }}>
               <Receipt size={24} />
             </div>
           </div>
           <div className="metric-trend">
-            <span className="trend-up">Processed via Kafka</span>
+            <span className="trend-up">{isPatient ? 'Completed' : 'Processed via Kafka'}</span>
           </div>
         </div>
 
-        <div className="metric-card glass">
-          <div className="metric-info">
-            <div>
-              <div className="metric-title">Revenue Collected</div>
-              <div className="metric-value">${totalBilling.toFixed(2)}</div>
+        {/* Card 4: Revenue (Admin/Doctor) OR Appointments placeholder (Patient) */}
+        {isPatient ? (
+          <div className="metric-card glass">
+            <div className="metric-info">
+              <div>
+                <div className="metric-title">Appointments</div>
+                <div className="metric-value">{invoices.length}</div>
+              </div>
+              <div className="metric-icon-wrapper" style={{ color: 'var(--color-secondary)', background: 'rgba(99, 102, 241, 0.1)' }}>
+                <CalendarCheck size={24} />
+              </div>
             </div>
-            <div className="metric-icon-wrapper" style={{ color: 'var(--color-warning)', background: 'rgba(245, 158, 11, 0.1)' }}>
-              <DollarSign size={24} />
+            <div className="metric-trend">
+              <span className="trend-up">Booked</span>
             </div>
           </div>
-          <div className="metric-trend">
-            <span className="trend-up">Direct clearing</span>
+        ) : (
+          <div className="metric-card glass">
+            <div className="metric-info">
+              <div>
+                <div className="metric-title">Revenue Collected</div>
+                <div className="metric-value">${totalBilling.toFixed(2)}</div>
+              </div>
+              <div className="metric-icon-wrapper" style={{ color: 'var(--color-warning)', background: 'rgba(245, 158, 11, 0.1)' }}>
+                <DollarSign size={24} />
+              </div>
+            </div>
+            <div className="metric-trend">
+              <span className="trend-up">Direct clearing</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="panel glass">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h3 className="section-title" style={{ margin: 0 }}>
-            <Activity size={20} /> Recent Billing Transactions
+            <Activity size={20} /> {isPatient ? 'My Payment History' : 'Recent Billing Transactions'}
           </h3>
           <button className="btn btn-secondary" onClick={fetchInvoices} disabled={loading} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
             {loading ? 'Refreshing...' : 'Refresh'}
@@ -134,16 +195,18 @@ export default function Dashboard({ token, userRole, patients, doctors }) {
 
         <div className="table-wrapper">
           {invoices.length === 0 ? (
-            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>No billing transactions found. Try booking an appointment.</p>
+            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>
+              {isPatient ? 'No payments found yet. Book an appointment to get started.' : 'No billing transactions found. Try booking an appointment.'}
+            </p>
           ) : (
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Invoice ID</th>
-                  <th>Patient ID</th>
-                  <th>Appointment ID</th>
+                  <th>{isPatient ? 'Receipt #' : 'Invoice ID'}</th>
+                  {!isPatient && <th>Patient</th>}
+                  <th>{isPatient ? 'Reference' : 'Appointment ID'}</th>
                   <th>Amount</th>
-                  <th>Billing Status</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -152,7 +215,9 @@ export default function Dashboard({ token, userRole, patients, doctors }) {
                     <td>
                       <code style={{ color: 'var(--color-primary)' }}>{invoice.id ? invoice.id.substring(0, 8) : 'N/A'}...</code>
                     </td>
-                    <td>{patients.find(p => p.id === invoice.patientId)?.name || invoice.patientId.substring(0, 8) + '...'}</td>
+                    {!isPatient && (
+                      <td>{patients.find(p => p.id === invoice.patientId)?.name || invoice.patientId.substring(0, 8) + '...'}</td>
+                    )}
                     <td>
                       <code style={{ color: 'var(--color-text-muted)' }}>{invoice.appointmentId ? invoice.appointmentId.substring(0, 8) : 'N/A'}...</code>
                     </td>

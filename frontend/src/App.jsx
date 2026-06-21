@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, ShieldAlert, LogOut, Lock, Mail, Activity, FileText, UserCheck, Bot, BarChart3, User } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldAlert, LogOut, Lock, Mail, Activity, FileText, UserCheck, Bot, BarChart3, User, Brain, Eye, EyeOff, CalendarCheck } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Patients from './components/Patients';
 import PatientRecords from './components/PatientRecords';
@@ -8,6 +8,8 @@ import BookingSaga from './components/BookingSaga';
 import AiAssistant from './components/AiAssistant';
 import Analytics from './components/Analytics';
 import RegisterForm from './components/RegisterForm';
+import MultimodalCdss from './components/MultimodalCdss';
+import LandingPage from './components/LandingPage';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '');
@@ -17,12 +19,14 @@ export default function App() {
   
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [currentView, setCurrentView] = useState('landing');
   
   // Credentials form state (email or username)
   const [emailOrUsername, setEmailOrUsername] = useState('admin');
   const [password, setPassword] = useState('password123');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Global domain state
   const [patients, setPatients] = useState([]);
@@ -53,7 +57,7 @@ export default function App() {
   const hasPermission = (tab, action = 'read') => {
     if (userRole === 'ADMIN') return true;
     if (userRole === 'DOCTOR') {
-      return ['dashboard', 'patients', 'patient-records', 'doctors', 'ai-assistant', 'booking'].includes(tab);
+      return ['dashboard', 'patients', 'patient-records', 'doctors', 'ai-assistant', 'booking', 'multimodal-cdss'].includes(tab);
     }
     if (userRole === 'PATIENT') {
       // Patient has access to read patient records, dashboard, saga booking, and ai assistant
@@ -181,10 +185,20 @@ export default function App() {
     }
   };
 
-  // If no auth token, render the Glassmorphic Login/Register card
+  // If no auth token, handle Landing vs Auth flows
   if (!token) {
+    if (currentView === 'landing') {
+      return <LandingPage onNavigateToAuth={() => setCurrentView('auth')} />;
+    }
+
     return (
-      <div className="auth-panel">
+      <div className="auth-panel" style={{ position: 'relative' }}>
+        <button 
+          onClick={() => setCurrentView('landing')}
+          style={{ position: 'absolute', top: '2rem', left: '2rem', background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
+        >
+          &larr; Back to Home
+        </button>
         {isRegisterMode ? (
           <RegisterForm onBackToLogin={handleBackToLogin} />
         ) : (
@@ -222,7 +236,24 @@ export default function App() {
                 <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Lock size={14} /> Password
                 </label>
-                <input type="password" className="form-input" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                <div className="password-input-container">
+                  <input 
+                    type={showLoginPassword ? "text" : "password"} 
+                    className="form-input password-input" 
+                    required 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder="••••••••" 
+                  />
+                  <button 
+                    type="button" 
+                    className="password-toggle-btn"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                  >
+                    {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
               </div>
 
               <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1.5rem' }} disabled={loggingIn}>
@@ -274,7 +305,7 @@ export default function App() {
             {hasPermission('patient-records') && (
               <li className={`nav-item ${activeTab === 'patient-records' ? 'active' : ''}`} onClick={() => setActiveTab('patient-records')}>
                 <FileText />
-                <span>Patient Charts</span>
+                <span>{userRole === 'PATIENT' ? 'My Records' : 'Patient Charts'}</span>
               </li>
             )}
             {hasPermission('doctors') && (
@@ -286,7 +317,13 @@ export default function App() {
             {hasPermission('ai-assistant') && (
               <li className={`nav-item ${activeTab === 'ai-assistant' ? 'active' : ''}`} onClick={() => setActiveTab('ai-assistant')}>
                 <Bot />
-                <span>Medical AI Console</span>
+                <span>{userRole === 'PATIENT' ? 'AI Health Assistant' : 'Medical AI Console'}</span>
+              </li>
+            )}
+            {hasPermission('multimodal-cdss') && (
+              <li className={`nav-item ${activeTab === 'multimodal-cdss' ? 'active' : ''}`} onClick={() => setActiveTab('multimodal-cdss')}>
+                <Brain />
+                <span>Clinical Decision Support</span>
               </li>
             )}
             {hasPermission('analytics') && (
@@ -297,8 +334,8 @@ export default function App() {
             )}
             {hasPermission('booking') && (
               <li className={`nav-item ${activeTab === 'booking' ? 'active' : ''}`} onClick={() => setActiveTab('booking')}>
-                <ShieldAlert />
-                <span>Saga Appointment Portal</span>
+                {userRole === 'PATIENT' ? <CalendarCheck /> : <ShieldAlert />}
+                <span>{userRole === 'PATIENT' ? 'Book Appointment' : 'Saga Appointment Portal'}</span>
               </li>
             )}
           </ul>
@@ -331,22 +368,25 @@ export default function App() {
           <Dashboard token={token} userRole={userRole} patients={patients} doctors={doctors} />
         )}
         {activeTab === 'patients' && hasPermission('patients') && (
-          <Patients token={token} patients={patients} onPatientCreated={(newP) => setPatients(prev => [...prev, newP])} />
+          <Patients token={token} userRole={userRole} patients={patients} onPatientCreated={(newP) => setPatients(prev => [...prev, newP])} />
         )}
         {activeTab === 'patient-records' && hasPermission('patient-records') && (
-          <PatientRecords token={token} patients={patients} />
+          <PatientRecords token={token} userRole={userRole} username={username} patients={patients} />
         )}
         {activeTab === 'doctors' && hasPermission('doctors') && (
-          <Doctors token={token} doctors={doctors} onDoctorCreated={(newD) => setDoctors(prev => [...prev, newD])} />
+          <Doctors token={token} userRole={userRole} doctors={doctors} onDoctorCreated={(newD) => setDoctors(prev => [...prev, newD])} />
         )}
         {activeTab === 'ai-assistant' && hasPermission('ai-assistant') && (
           <AiAssistant token={token} />
+        )}
+        {activeTab === 'multimodal-cdss' && hasPermission('multimodal-cdss') && (
+          <MultimodalCdss token={token} />
         )}
         {activeTab === 'analytics' && hasPermission('analytics') && (
           <Analytics token={token} />
         )}
         {activeTab === 'booking' && hasPermission('booking') && (
-          <BookingSaga token={token} patients={patients} doctors={doctors} onBookingComplete={fetchPatients} />
+          <BookingSaga token={token} userRole={userRole} patients={patients} doctors={doctors} onBookingComplete={fetchPatients} />
         )}
       </main>
     </div>

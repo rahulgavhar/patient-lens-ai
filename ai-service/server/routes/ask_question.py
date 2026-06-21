@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Request
 from fastapi.responses import JSONResponse
 from server.modules.llm import get_llm_chain
 from server.modules.query_handlers import query_chain
@@ -25,51 +25,56 @@ class SimpleRetriever(BaseRetriever):
 
 
 @router.post("/ask_question")
-async def ask_question(question: str = Form(...)):
+async def ask_question(request: Request, question: str = Form(...)):
     try:
         logger.info(f"Received question: {question}")
 
         pinecone_api_key = os.getenv("PINECONE_API_KEY")
+        groq_api_key = os.getenv("GROQ_API_KEY")
         pinecone_index_name = os.getenv("PINECONE_INDEX_NAME", "medical-index")
+        username = request.headers.get("x-user-username") or "default"
 
         if not pinecone_api_key:
             return JSONResponse(
-                content={"error": "Missing required API keys in .env"},
-                status_code=500,
+                content={"error": "Missing required PINECONE_API_KEY in .env"},
+                status_code=400,
             )
 
         pc = Pinecone(api_key=pinecone_api_key)
-        index = pc.Index(pinecone_index_name)
-        embed_model = create_embedding_model()
 
+        docs = []
         try:
-            embedding_query = embed_model.embed_query(question)
-        except Exception as embedding_error:
-            return JSONResponse(
-                content={"error": format_embedding_error(embedding_error)},
-                status_code=500,
-            )
-
-        res = index.query(vector=embedding_query, top_k=5, include_metadata=True)
-
-        matches = res.get("matches", []) if isinstance(res, dict) else getattr(res, "matches", [])
-        docs = [
-            Document(
-                page_content=match.get("metadata", {}).get("text", ""),
-                metadata={"source": match.get("metadata", {}).get("source", "")},
-            )
-            for match in matches
-        ]
+            existing_indexes = [idx.name for idx in pc.list_indexes()]
+            if pinecone_index_name in existing_indexes:
+                index = pc.Index(pinecone_index_name)
+                embed_model = create_embedding_model()
+                try:
+                    embedding_query = embed_model.embed_query(question)
+                    res = index.query(vector=embedding_query, top_k=5, include_metadata=True, namespace=username)
+                    matches = res.get("matches", []) if isinstance(res, dict) else getattr(res, "matches", [])
+                    docs = [
+                        Document(
+                            page_content=match.get("metadata", {}).get("text", ""),
+                            metadata={"source": match.get("metadata", {}).get("source", "")},
+                        )
+                        for match in matches
+                    ]
+                except Exception as query_err:
+                    logger.warning(f"Error querying Pinecone: {query_err}. Proceeding with empty context.")
+            else:
+                logger.info(f"Pinecone index '{pinecone_index_name}' not found. Proceeding with empty context.")
+        except Exception as list_err:
+            logger.warning(f"Failed to check Pinecone index existence: {list_err}. Proceeding with empty context.")
 
         retriever = SimpleRetriever(documents=docs)
-        llm_chain = get_llm_chain(retriever)
+        llm_chain = get_llm_chain(retriever, api_key=groq_api_key)
         response = query_chain(llm_chain, question)
         logger.info(f"Response: {response}")
         
         # Save chat interaction in database
         try:
             ans = response.get("answer", "")
-            save_chat(question, ans)
+            save_chat(username, question, ans)
         except Exception as db_err:
             logger.error(f"Failed to persist chat record in Postgres: {db_err}")
 
@@ -80,10 +85,11 @@ async def ask_question(question: str = Form(...)):
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 @router.get("/chat_history")
-async def chat_history():
+async def chat_history(request: Request):
     try:
-        logger.info("Fetching chat history from database")
-        history = get_chat_history()
+        username = request.headers.get("x-user-username") or "default"
+        logger.info(f"Fetching chat history from database for user: {username}")
+        history = get_chat_history(username)
         return JSONResponse(content=history)
     except Exception as e:
         logger.error(f"Error in fetching chat history: {e}")

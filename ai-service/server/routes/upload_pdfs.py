@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File
+from fastapi import APIRouter, UploadFile, File, Request
 from typing import List
 from server.modules.load_vectorstore import load_vectorstore
 from fastapi.responses import JSONResponse
@@ -20,11 +20,12 @@ def _format_upload_error(error: Exception) -> str:
 
 
 @router.post("/upload_pdfs")
-async def upload_pdfs(files: List[UploadFile] = File(...)):
+async def upload_pdfs(request: Request, files: List[UploadFile] = File(...)):
     try:
         logger.info(f"Received {len(files)} files for upload")
-        load_vectorstore(files)
-        logger.info(f"Successfully loaded {len(files)} files for upload")
+        username = request.headers.get("x-user-username") or "default"
+        load_vectorstore(files, namespace=username)
+        logger.info(f"Successfully loaded {len(files)} files for upload under namespace: {username}")
         return JSONResponse(content={"message": "Files uploaded and processed successfully"})
     except Exception as e:
         logger.error(f"Error in upload_pdfs: {e}")

@@ -4,11 +4,17 @@ def query_chain(chain, user_input: str):
     try:
         logger.info(f"Querying {user_input}")
         result = chain.invoke({"input": user_input})
-        response={
-            "response": result['answer'],
-            "sources": [doc.metadata.get("source", "") for doc in result.get('context', [])]
+        response = {
+            "answer": result.get('answer', ''),
+            "context": [
+                {
+                    "page_content": doc.page_content,
+                    "metadata": doc.metadata
+                }
+                for doc in result.get('context', [])
+            ]
         }
-        logger.info(f"Response: {response}")
+        logger.info(f"Response formatted for frontend RAG: {response}")
         return response
     except Exception as e:
         logger.error(f"Error in query_chain: {e}")

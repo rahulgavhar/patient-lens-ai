@@ -29,10 +29,14 @@ def init_db():
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS chat_history (
                     id SERIAL PRIMARY KEY,
+                    username VARCHAR(100) NOT NULL DEFAULT 'default',
                     question TEXT NOT NULL,
                     answer TEXT NOT NULL,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
+            """)
+            cur.execute("""
+                ALTER TABLE chat_history ADD COLUMN IF NOT EXISTS username VARCHAR(100) NOT NULL DEFAULT 'default';
             """)
             conn.commit()
             logger.info("Database initialized successfully.")
@@ -41,31 +45,32 @@ def init_db():
     finally:
         conn.close()
 
-def save_chat(question: str, answer: str):
+def save_chat(username: str, question: str, answer: str):
     conn = get_connection()
     if not conn:
         return
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "INSERT INTO chat_history (question, answer) VALUES (%s, %s);",
-                (question, answer)
+                "INSERT INTO chat_history (username, question, answer) VALUES (%s, %s, %s);",
+                (username, question, answer)
             )
             conn.commit()
-            logger.info("Chat saved successfully.")
+            logger.info(f"Chat saved successfully for user: {username}")
     except Exception as e:
         logger.error(f"Failed to save chat: {e}")
     finally:
         conn.close()
 
-def get_chat_history():
+def get_chat_history(username: str):
     conn = get_connection()
     if not conn:
         return []
     try:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
-                "SELECT id, question, answer, timestamp::text FROM chat_history ORDER BY timestamp ASC;"
+                "SELECT id, question, answer, timestamp::text FROM chat_history WHERE username = %s ORDER BY timestamp ASC;",
+                (username,)
             )
             rows = cur.fetchall()
             return rows

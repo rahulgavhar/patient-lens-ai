@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { UserCheck, Search, Plus, Award, Stethoscope, Building, Calendar } from 'lucide-react';
 
-export default function Doctors({ token, doctors, onDoctorCreated }) {
+export default function Doctors({ token, userRole, doctors, onDoctorCreated }) {
+  const canCreate = userRole === 'ADMIN';
   const [searchTerm, setSearchTerm] = useState('');
   const [specializationFilter, setSpecializationFilter] = useState('All');
   
@@ -91,12 +92,14 @@ export default function Doctors({ token, doctors, onDoctorCreated }) {
           <h2>Specialist Network</h2>
           <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>Search and onboard doctors across clinical divisions.</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
-          <Plus size={18} /> {showForm ? 'View Directory' : 'Onboard Doctor'}
-        </button>
+        {canCreate && (
+          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+            <Plus size={18} /> {showForm ? 'View Directory' : 'Onboard Doctor'}
+          </button>
+        )}
       </div>
 
-      {showForm ? (
+      {canCreate && showForm ? (
         <div className="panel glass max-w-2xl" style={{ maxWidth: '600px', margin: '0 auto' }}>
           <h3 className="section-title">
             <UserCheck size={20} /> Register Specialist

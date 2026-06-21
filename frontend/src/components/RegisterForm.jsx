@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ShieldAlert, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, ShieldAlert, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 export default function RegisterForm({ onBackToLogin }) {
   const [username, setUsername] = useState('');
@@ -9,6 +9,7 @@ export default function RegisterForm({ onBackToLogin }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -119,15 +120,25 @@ export default function RegisterForm({ onBackToLogin }) {
           <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <Lock size={14} /> Password
           </label>
-          <input 
-            type="password" 
-            className="form-input" 
-            required 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            placeholder="Min. 8 characters"
-            minLength={8}
-          />
+          <div className="password-input-container">
+            <input 
+              type={showRegisterPassword ? "text" : "password"} 
+              className="form-input password-input" 
+              required 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)} 
+              placeholder="Min. 8 characters"
+              minLength={8}
+            />
+            <button 
+              type="button" 
+              className="password-toggle-btn"
+              onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+              aria-label={showRegisterPassword ? "Hide password" : "Show password"}
+            >
+              {showRegisterPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
 
         <div className="form-group">

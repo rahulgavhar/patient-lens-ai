@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { UserPlus, Users, Sparkles } from 'lucide-react';
 
-export default function Patients({ token, patients, onPatientCreated }) {
+export default function Patients({ token, userRole, patients, onPatientCreated }) {
+  const canCreate = userRole === 'ADMIN';
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
@@ -99,7 +100,7 @@ export default function Patients({ token, patients, onPatientCreated }) {
         </div>
       </div>
 
-      <div className="panel-grid">
+      <div className={canCreate ? 'panel-grid' : ''}>
         <div className="panel glass">
           <h3 className="section-title">
             <Users size={20} /> Registered Patients
@@ -139,6 +140,7 @@ export default function Patients({ token, patients, onPatientCreated }) {
           </div>
         </div>
 
+        {canCreate && (
         <div className="panel glass">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
             <h3 className="section-title" style={{ margin: 0 }}>
@@ -223,6 +225,7 @@ export default function Patients({ token, patients, onPatientCreated }) {
             </button>
           </form>
         </div>
+        )}
       </div>
     </div>
   );

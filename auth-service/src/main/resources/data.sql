@@ -7,16 +7,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     role VARCHAR(50) NOT NULL
 );
 
--- Add username column if upgrading from old schema (idempotent)
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = 'users' AND column_name = 'username'
-    ) THEN
-        ALTER TABLE "users" ADD COLUMN username VARCHAR(255) UNIQUE;
-    END IF;
-END $$;
+
 
 -- BCrypt hash of 'password123' (compatible with Spring Security BCryptPasswordEncoder)
 -- Seed ADMIN user

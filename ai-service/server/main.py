@@ -1,20 +1,11 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from server.middlewares.exception_handlers import catch_exception_middleware
 from server.middlewares.auth_middleware import role_authorization_middleware
 from server.routes.upload_pdfs import router as upload_router
 from server.routes.ask_question import router as ask_router
+from server.routes.multimodal_cdss import router as cdss_router
 
 app = FastAPI(title="AI Service")
-
-# CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-    allow_credentials=True,
-)
 
 # middleware exception handlers
 app.middleware("http")(catch_exception_middleware)
@@ -30,6 +21,7 @@ async def root():
         "endpoints": {
             "upload": "/upload_pdfs",
             "ask": "/ask_question",
+            "multimodal": "/multimodal-decision",
             "docs": "/docs"
         }
     }
@@ -37,7 +29,10 @@ async def root():
 # router
 
 # 1. upload file
-app.include_router(upload_router)
+app.include_router(upload_router, prefix="/ai")
 # 2. asking query
-app.include_router(ask_router)
+app.include_router(ask_router, prefix="/ai")
+# 3. multimodal CDSS
+app.include_router(cdss_router, prefix="/ai")
+
 

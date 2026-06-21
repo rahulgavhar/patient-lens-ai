@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { User, Shield, Receipt, Calendar, Activity, Phone, Mail, Award, Heart } from 'lucide-react';
 
-export default function PatientRecords({ token, patients }) {
+export default function PatientRecords({ token, userRole, username, patients }) {
+  const isPatient = userRole === 'PATIENT';
   const [selectedPatientId, setSelectedPatientId] = useState('');
   const [invoices, setInvoices] = useState([]);
   const [appointments, setAppointments] = useState([]);
@@ -57,25 +58,27 @@ export default function PatientRecords({ token, patients }) {
     <div className="fade-in">
       <div className="app-header">
         <div>
-          <h2>Patient Profiles & Charts</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>Lookup complete medical summaries, billing accounts, and event logs.</p>
+          <h2>{isPatient ? 'My Medical Records' : 'Patient Profiles & Charts'}</h2>
+          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>{isPatient ? 'View your medical summary, invoices, and appointment history.' : 'Lookup complete medical summaries, billing accounts, and event logs.'}</p>
         </div>
       </div>
 
-      <div style={{ marginBottom: '2rem' }} className="glass">
-        <div style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <label style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>Select Patient Record:</label>
-          <select className="form-select" style={{ maxWidth: '350px', margin: 0 }} value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)}>
-            {patients.length === 0 ? (
-              <option value="">No onboarded patients found</option>
-            ) : (
-              patients.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.email})</option>
-              ))
-            )}
-          </select>
+      {!isPatient && (
+        <div style={{ marginBottom: '2rem' }} className="glass">
+          <div style={{ padding: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <label style={{ fontWeight: '600', color: 'var(--color-text-primary)' }}>Select Patient Record:</label>
+            <select className="form-select" style={{ maxWidth: '350px', margin: 0 }} value={selectedPatientId} onChange={(e) => setSelectedPatientId(e.target.value)}>
+              {patients.length === 0 ? (
+                <option value="">No onboarded patients found</option>
+              ) : (
+                patients.map(p => (
+                  <option key={p.id} value={p.id}>{p.name} ({p.email})</option>
+                ))
+              )}
+            </select>
+          </div>
         </div>
-      </div>
+      )}
 
       {selectedPatient ? (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>

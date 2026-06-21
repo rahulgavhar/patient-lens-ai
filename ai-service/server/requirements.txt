@@ -34,3 +34,6 @@ loguru
 
 # Database Connectivity
 psycopg2-binary
+torch
+transformers
+pillow

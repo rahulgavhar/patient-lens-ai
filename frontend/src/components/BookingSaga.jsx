@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, CreditCard, BellRing, Radio, Sparkles, Terminal, FileText, AlertCircle } from 'lucide-react';
 
-export default function BookingSaga({ token, patients, doctors, onBookingComplete }) {
+export default function BookingSaga({ token, userRole, patients, doctors, onBookingComplete }) {
+  const isPatient = userRole === 'PATIENT';
+
   const [patientId, setPatientId] = useState('');
   const [doctorId, setDoctorId] = useState('');
   const [amount, setAmount] = useState('150.00');
   const [slotDatetime, setSlotDatetime] = useState('');
+  const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
 
   // Saga State
   const [sagaRunning, setSagaRunning] = useState(false);
@@ -16,11 +19,11 @@ export default function BookingSaga({ token, patients, doctors, onBookingComplet
 
   // Initializing step states
   const [steps, setSteps] = useState([
-    { id: 1, name: 'Saga Initiated', icon: ShieldCheck, state: 'idle', desc: 'Initialize state PENDING' },
-    { id: 2, name: 'gRPC Payment', icon: CreditCard, state: 'idle', desc: 'Call payment-service via gRPC' },
-    { id: 3, name: 'gRPC Notification', icon: BellRing, state: 'idle', desc: 'Call notification-service via gRPC' },
-    { id: 4, name: 'Kafka Broadcast', icon: Radio, state: 'idle', desc: 'Publish appointment.created' },
-    { id: 5, name: 'Confirmed', icon: Sparkles, state: 'idle', desc: 'Saga Commit / Rollback' }
+    { id: 1, name: isPatient ? 'Requesting' : 'Saga Initiated', icon: ShieldCheck, state: 'idle', desc: isPatient ? 'Verifying details' : 'Initialize state PENDING' },
+    { id: 2, name: isPatient ? 'Payment' : 'gRPC Payment', icon: CreditCard, state: 'idle', desc: isPatient ? 'Processing payment' : 'Call payment-service via gRPC' },
+    { id: 3, name: isPatient ? 'Notifying' : 'gRPC Notification', icon: BellRing, state: 'idle', desc: isPatient ? 'Sending confirmation' : 'Call notification-service via gRPC' },
+    { id: 4, name: isPatient ? 'Finalizing' : 'Kafka Broadcast', icon: Radio, state: 'idle', desc: isPatient ? 'Updating records' : 'Publish appointment.created' },
+    { id: 5, name: 'Confirmed', icon: Sparkles, state: 'idle', desc: isPatient ? 'Appointment booked' : 'Saga Commit / Rollback' }
   ]);
 
   useEffect(() => {
@@ -189,14 +192,14 @@ export default function BookingSaga({ token, patients, doctors, onBookingComplet
         // End as Cancelled
         updateStepState(5, 'failed');
         setBookingStatus('FAILED');
-        setErrorMessage('Saga Transaction Aborted. Payment was rejected and status is CANCELLED.');
+        setErrorMessage(isPatient ? 'Payment was rejected and appointment is cancelled.' : 'Saga Transaction Aborted. Payment was rejected and status is CANCELLED.');
         addLog(`Saga Orchestrator: Compensation executed. Appointment status rolled back to CANCELLED.`, 'info');
       }
 
     } catch (err) {
       updateStepState(2, 'failed');
       setBookingStatus('FAILED');
-      setErrorMessage('Network connection lost to API Gateway. Cannot complete Saga.');
+      setErrorMessage(isPatient ? 'Network connection lost. Please try again.' : 'Network connection lost to API Gateway. Cannot complete Saga.');
       addLog(`System Error: ${err.message}`, 'info');
     } finally {
       setSagaRunning(false);
@@ -205,19 +208,24 @@ export default function BookingSaga({ token, patients, doctors, onBookingComplet
 
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+  const filteredDoctors = doctors.filter(d => 
+    d.name.toLowerCase().includes(doctorSearchTerm.toLowerCase()) || 
+    d.specialization.toLowerCase().includes(doctorSearchTerm.toLowerCase())
+  );
+
   return (
     <div className="fade-in">
       <div className="app-header">
         <div>
-          <h2>Saga Appointment Portal</h2>
-          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>Experience gRPC transactions and Kafka compensating rollbacks in real time.</p>
+          <h2>{isPatient ? 'Book an Appointment' : 'Saga Appointment Portal'}</h2>
+          <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>{isPatient ? 'Schedule a secure visit with your doctor.' : 'Experience gRPC transactions and Kafka compensating rollbacks in real time.'}</p>
         </div>
       </div>
 
       <div className="panel-grid">
         <div className="panel glass">
           <h3 className="section-title">
-            <ShieldCheck size={20} /> Saga Orchestrator Pipeline
+            <ShieldCheck size={20} /> {isPatient ? 'Booking Progress' : 'Saga Orchestrator Pipeline'}
           </h3>
 
           <div className="saga-visualizer">
@@ -227,12 +235,12 @@ export default function BookingSaga({ token, patients, doctors, onBookingComplet
                 <h4 style={{ color: sagaRunning ? 'var(--color-primary)' : 'inherit', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
                   {sagaRunning ? (
                     <>
-                      <span className="badge badge-info" style={{ animation: 'pulse-glow 1s infinite alternate' }}>Processing Saga</span>
+                      <span className="badge badge-info" style={{ animation: 'pulse-glow 1s infinite alternate' }}>{isPatient ? 'Processing' : 'Processing Saga'}</span>
                     </>
                   ) : bookingStatus === 'SUCCESS' ? (
-                    <span className="badge badge-success">Saga Committed</span>
+                    <span className="badge badge-success">{isPatient ? 'Confirmed' : 'Saga Committed'}</span>
                   ) : bookingStatus === 'FAILED' ? (
-                    <span className="badge badge-danger">Saga Rolled Back</span>
+                    <span className="badge badge-danger">{isPatient ? 'Failed' : 'Saga Rolled Back'}</span>
                   ) : (
                     <span className="badge badge-info" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-secondary)' }}>Ready</span>
                   )}
@@ -266,26 +274,28 @@ export default function BookingSaga({ token, patients, doctors, onBookingComplet
             </div>
           </div>
 
-          <div style={{ marginTop: '2rem' }}>
-            <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontSize: '0.95rem' }}>
-              <Terminal size={16} /> Live Orchestration Logs
-            </h4>
-            <div className="live-logger">
-              {sagaLogs.length === 0 ? (
-                <div className="log-entry" style={{ color: 'var(--color-text-muted)' }}>Waiting to trigger saga...</div>
-              ) : (
-                sagaLogs.map((log, index) => (
-                  <div key={index} className="log-entry">
-                    <span className="log-time">[{log.time}]</span>
-                    <span className={`log-type-${log.type}`}>
-                      [{log.type.toUpperCase()}]
-                    </span>{' '}
-                    <span>{log.msg}</span>
-                  </div>
-                ))
-              )}
+          {!isPatient && (
+            <div style={{ marginTop: '2rem' }}>
+              <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontSize: '0.95rem' }}>
+                <Terminal size={16} /> Live Orchestration Logs
+              </h4>
+              <div className="live-logger">
+                {sagaLogs.length === 0 ? (
+                  <div className="log-entry" style={{ color: 'var(--color-text-muted)' }}>Waiting to trigger saga...</div>
+                ) : (
+                  sagaLogs.map((log, index) => (
+                    <div key={index} className="log-entry">
+                      <span className="log-time">[{log.time}]</span>
+                      <span className={`log-type-${log.type}`}>
+                        [{log.type.toUpperCase()}]
+                      </span>{' '}
+                      <span>{log.msg}</span>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="panel glass">
@@ -294,22 +304,58 @@ export default function BookingSaga({ token, patients, doctors, onBookingComplet
           </h3>
 
           <form onSubmit={handleBooking}>
-            <div className="form-group">
-              <label className="form-label">Select Patient</label>
-              <select className="form-select" value={patientId} onChange={(e) => setPatientId(e.target.value)}>
-                {patients.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name} ({p.email})</option>
-                ))}
-              </select>
-            </div>
+            {!isPatient && (
+              <div className="form-group">
+                <label className="form-label">Select Patient</label>
+                <select className="form-select" value={patientId} onChange={(e) => setPatientId(e.target.value)}>
+                  {patients.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name} ({p.email})</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div className="form-group">
               <label className="form-label">Select Doctor & Specialization</label>
-              <select className="form-select" value={doctorId} onChange={(e) => setDoctorId(e.target.value)}>
-                {doctors.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name} - {d.specialization}</option>
-                ))}
-              </select>
+              {doctors.length === 0 ? (
+                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--color-text-muted)' }}>
+                  No specialists are currently available in the network.
+                </div>
+              ) : (
+                <>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    placeholder="Search by name or specialization..." 
+                    value={doctorSearchTerm} 
+                    onChange={(e) => setDoctorSearchTerm(e.target.value)}
+                    style={{ marginBottom: '0.75rem' }}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', maxHeight: '250px', overflowY: 'auto', padding: '0.25rem' }}>
+                    {filteredDoctors.length === 0 ? (
+                      <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '1rem', color: 'var(--color-text-muted)' }}>No doctors match your search.</div>
+                    ) : (
+                      filteredDoctors.map(d => (
+                        <div 
+                          key={d.id} 
+                          onClick={() => setDoctorId(d.id)}
+                          style={{ 
+                            padding: '0.75rem', 
+                            borderRadius: 'var(--radius-md)', 
+                            border: `2px solid ${doctorId === d.id ? 'var(--color-primary)' : 'rgba(255,255,255,0.1)'}`,
+                            background: doctorId === d.id ? 'rgba(6, 182, 212, 0.1)' : 'rgba(0,0,0,0.2)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <div style={{ fontWeight: '600', color: doctorId === d.id ? 'var(--color-primary)' : 'var(--color-text-primary)' }}>{d.name}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>{d.specialization}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="form-group">
@@ -321,19 +367,23 @@ export default function BookingSaga({ token, patients, doctors, onBookingComplet
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <label className="form-label" style={{ margin: 0 }}>Charge Amount ($)</label>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setAmount('150.00')} style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}>
-                    Happy Path ($150)
-                  </button>
-                  <button type="button" className="btn btn-secondary" onClick={() => setAmount('999.00')} style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem', color: 'var(--color-accent)' }}>
-                    Failure ($999)
-                  </button>
+                  {!isPatient && (
+                    <>
+                      <button type="button" className="btn btn-secondary" onClick={() => setAmount('150.00')} style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem' }}>
+                        Happy Path ($150)
+                      </button>
+                      <button type="button" className="btn btn-secondary" onClick={() => setAmount('999.00')} style={{ padding: '0.15rem 0.4rem', fontSize: '0.7rem', color: 'var(--color-accent)' }}>
+                        Failure ($999)
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
               <input type="number" step="0.01" className="form-input" required value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={sagaRunning || patients.length === 0}>
-              {sagaRunning ? 'Saga Processing...' : 'Execute Booking Saga'}
+              {sagaRunning ? (isPatient ? 'Processing...' : 'Saga Processing...') : (isPatient ? 'Confirm Appointment' : 'Execute Booking Saga')}
             </button>
           </form>
 
