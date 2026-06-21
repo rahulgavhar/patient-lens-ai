@@ -3,17 +3,97 @@ syntax = "proto3";
 option java_multiple_files = true;
 option java_package = "billing";
 
+// --------------------------------
+// Billing Service
+// --------------------------------
 service BillingService {
+
+  // Create a billing account for a patient
   rpc CreateBillingAccount (BillingRequest) returns (BillingResponse);
+
+  // Retrieve billing account details by patient ID
+  rpc GetBillingAccount (GetBillingRequest) returns (BillingResponse);
+
+  // Update patient billing account details
+  rpc UpdateBillingAccount (UpdateBillingRequest) returns (BillingResponse);
+
+  // Delete a billing account (marks as inactive)
+  rpc DeleteBillingAccount (DeleteBillingRequest) returns (BillingResponse);
+
+  // Link a payment account to this billing account
+  rpc LinkPaymentAccount (LinkPaymentRequest) returns (BillingResponse);
+
+  // Unlink a payment account from this billing account
+  rpc UnlinkPaymentAccount (UnlinkPaymentRequest) returns (BillingResponse);
+
+  // Fetch all linked payment accounts for audit
+  rpc ListLinkedPayments (ListPaymentRequest) returns (ListPaymentResponse);
 }
 
+// --------------------------------
+// Billing Account Messages
+// --------------------------------
 message BillingRequest {
-  string patientId = 1;
-  string name = 2;
-  string email = 3;
+  string patientId = 1;       // UUID of the patient
+  string name = 2;            // Patient name
+  string email = 3;           // Patient email
+  string insuranceId = 4;     // Optional insurance ID
+  string phoneNumber = 5;     // Optional contact
+  string address = 6;         // Optional address
 }
 
 message BillingResponse {
-  string accountId = 1;
-  double status = 2;
+  string accountId = 1;       // Generated billing account ID
+  string status = 2;          // SUCCESS / FAILURE
+  string patientId = 3;       // Linked patient
+  string createdAt = 4;       // Timestamp of creation
+  string updatedAt = 5;       // Timestamp of last update
+  bool active = 6;            // Active or deleted
+}
+
+// --------------------------------
+// Get / Update / Delete Messages
+// --------------------------------
+message GetBillingRequest {
+  string patientId = 1;
+}
+
+message UpdateBillingRequest {
+  string patientId = 1;
+  string name = 2;
+  string email = 3;
+  string phoneNumber = 4;
+  string address = 5;
+}
+
+message DeleteBillingRequest {
+  string patientId = 1;
+}
+
+// --------------------------------
+// Payment Linking Messages
+// --------------------------------
+message LinkPaymentRequest {
+  string billingAccountId = 1;   // Billing account to link
+  string paymentAccountId = 2;   // Existing payment service account
+  string paymentProvider = 3;    // e.g., Stripe, Razorpay
+}
+
+message UnlinkPaymentRequest {
+  string billingAccountId = 1;   // Billing account to unlink from
+  string paymentAccountId = 2;   // Payment service account to unlink
+}
+
+message ListPaymentRequest {
+  string billingAccountId = 1;
+}
+
+message LinkedPayment {
+  string paymentAccountId = 1;
+  string paymentProvider = 2;
+  string linkedAt = 3;           // Timestamp
+}
+
+message ListPaymentResponse {
+  repeated LinkedPayment linkedPayments = 1;
 }

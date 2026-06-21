@@ -40,6 +40,8 @@ public class JwtValidationGatewayFilterFactory extends AbstractGatewayFilterFact
                     .timeout(Duration.ofSeconds(2))
                     .flatMap(response -> chain.filter(exchange))
                     .onErrorResume(ex -> {
+                        System.err.println("JWT validation failed error: " + ex.getMessage());
+                        ex.printStackTrace();
                         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
                         return exchange.getResponse().setComplete();
                     });

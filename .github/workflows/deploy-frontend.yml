@@ -1,0 +1,44 @@
+name: Build & Deploy Frontend (Render)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: Install Dependencies
+      run: |
+        cd frontend
+        npm install
+
+    - name: Build Production Bundle
+      run: |
+        cd frontend
+        npm run build
+
+    - name: Trigger Render Deployment
+      env:
+        RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_DEPLOY_HOOK }}
+      run: |
+        if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+          echo "Triggering Render webhook deploy hook..."
+          curl -X POST "$RENDER_DEPLOY_HOOK"
+        else
+          echo "No RENDER_DEPLOY_HOOK secret configured. Skipping webhook trigger."
+        fi

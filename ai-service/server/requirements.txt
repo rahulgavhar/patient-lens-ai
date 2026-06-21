@@ -1,0 +1,33 @@
+fastapi
+uvicorn[standard]
+python-multipart
+
+# LangChain Ecosystem
+langchain
+langchain-core
+langchain-community
+langchain-groq
+langchain-text-splitters
+
+# Vector store
+pinecone
+
+# Embeddings
+langchain-google-genai
+sentence-transformers
+
+# PDF Parsing
+pypdf
+
+# Environment Variables
+python-dotenv
+
+# Typing / Validation
+pydantic>=2
+
+# Utilities
+requests
+tqdm
+
+# Logging
+loguru

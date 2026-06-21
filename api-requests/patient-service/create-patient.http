@@ -8,7 +8,7 @@ Authorization: Bearer {{token}}
   "name": "John Dobhal",
   "dateOfBirth": "1990-01-01",
   "address": "123 Main St, Anytown, USA",
-  "email": "test10@test.com",
+  "email": "test11@test.com",
   "registeredDate": "2024-06-15"
 }
 

@@ -1,0 +1,282 @@
+{
+	"info": {
+		"_postman_id": "ai-service-collection",
+		"name": "AI Service - Patient Lens",
+		"description": "FastAPI-based AI service for processing PDF documents and answering questions using RAG",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Accept",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{baseUrl}}/",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "Check if the server is running and view available endpoints"
+			},
+			"response": []
+		},
+		{
+			"name": "Upload One PDF",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "files",
+							"type": "file",
+							"src": "api-requests/sample.pdf",
+							"description": "PDF file to upload and process"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/upload_pdfs",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"upload_pdfs"
+					]
+				},
+				"description": "Upload a single PDF file for processing and indexing"
+			},
+			"response": []
+		},
+		{
+			"name": "Upload Multiple PDFs",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "files",
+							"type": "file",
+							"src": "api-requests/sample.pdf",
+							"description": "First PDF file"
+						},
+						{
+							"key": "files",
+							"type": "file",
+							"src": "api-requests/sample-2.pdf",
+							"description": "Second PDF file"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/upload_pdfs",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"upload_pdfs"
+					]
+				},
+				"description": "Upload multiple PDF files for processing and indexing"
+			},
+			"response": []
+		},
+		{
+			"name": "Ask Question (Variable)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "question",
+							"value": "{{question}}",
+							"type": "text",
+							"description": "Question to ask about uploaded documents"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/ask_question",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"ask_question"
+					]
+				},
+				"description": "Ask a question using environment variable"
+			},
+			"response": []
+		},
+		{
+			"name": "Ask Question - Medical Points",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "question",
+							"value": "List the most important medical points from the uploaded document.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/ask_question",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"ask_question"
+					]
+				},
+				"description": "Ask about important medical points"
+			},
+			"response": []
+		},
+		{
+			"name": "Ask Question - Diagnosis",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "question",
+							"value": "What diagnosis information is mentioned in the document?",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/ask_question",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"ask_question"
+					]
+				},
+				"description": "Ask about diagnosis information"
+			},
+			"response": []
+		},
+		{
+			"name": "Ask Question - Treatment",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "question",
+							"value": "What treatment options are discussed?",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/ask_question",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"ask_question"
+					]
+				},
+				"description": "Ask about treatment options"
+			},
+			"response": []
+		},
+		{
+			"name": "Ask Question - Summary",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "question",
+							"value": "Provide a brief summary of the key findings in the document.",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{baseUrl}}/ask_question",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"ask_question"
+					]
+				},
+				"description": "Ask for a summary of key findings"
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		},
+		{
+			"key": "question",
+			"value": "Summarize the key points from the uploaded PDF.",
+			"type": "string"
+		}
+	]
+}
+

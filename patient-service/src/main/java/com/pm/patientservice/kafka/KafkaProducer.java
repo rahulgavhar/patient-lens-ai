@@ -7,8 +7,11 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import patient.events.PatientEvent;
 
+import java.time.Instant;
+
 @Service
 public class KafkaProducer {
+
     private static final Logger log = LoggerFactory.getLogger(KafkaProducer.class);
 
     private final KafkaTemplate<String, byte[]> kafkaTemplate;
@@ -17,18 +20,42 @@ public class KafkaProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void sendEvent(Patient patient) {
+    /**
+     * Sends a generic patient event to Kafka
+     * @param patient Patient object
+     * @param eventType Event type: PATIENT_CREATED, PATIENT_UPDATED, etc.
+     */
+    public void sendEvent(Patient patient, String eventType) {
         PatientEvent event = PatientEvent.newBuilder()
                 .setPatientId(patient.getId().toString())
                 .setName(patient.getName())
                 .setEmail(patient.getEmail())
-                .setEventType("PATIENT_CREATED")
+                .setEventType(eventType)
+                .setTimestamp(Instant.now().toEpochMilli())
                 .build();
-        try{
+
+        try {
             kafkaTemplate.send("patient", event.toByteArray());
-            log.info("Sent patient event to Kafka for patientId: {}", patient.getId());
+            log.info("Sent patient event '{}' for patientId={}", eventType, patient.getId());
         } catch (Exception e) {
-            log.error("Failed to send patient event to Kafka for patientId: {}", patient.getId(), e);
+            log.error("Failed to send patient event '{}' for patientId={}", eventType, patient.getId(), e);
         }
+    }
+
+    // Convenience methods for common events
+    public void sendPatientCreated(Patient patient) {
+        sendEvent(patient, "PATIENT_CREATED");
+    }
+
+    public void sendPatientUpdated(Patient patient) {
+        sendEvent(patient, "PATIENT_UPDATED");
+    }
+
+    public void sendPatientDeleted(Patient patient) {
+        sendEvent(patient, "PATIENT_DELETED");
+    }
+
+    public void sendPatientHealthUpdated(Patient patient) {
+        sendEvent(patient, "PATIENT_HEALTH_UPDATED");
     }
 }

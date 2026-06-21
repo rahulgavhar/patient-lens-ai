@@ -1,8 +1,23 @@
 server:
   port: 4004
+auth:
+  service:
+    url: ${AUTH_SERVICE_URL:http://localhost:4005}
 spring:
   cloud:
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:5173,https://patient-lens.onrender.com"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
       server:
         webflux:
           routes:
@@ -31,3 +46,24 @@ spring:
                   - Path=/api-docs/auth
               filters:
                 - RewritePath=/api-docs/auth,/v3/api-docs
+            - id: doctor-service-route
+              uri: http://doctor-service:4003
+              predicates:
+                - Path=/api/doctors/**
+              filters:
+                - StripPrefix=1
+                - JwtValidation
+            - id: appointment-service-route
+              uri: http://appointment-service:4002
+              predicates:
+                - Path=/api/appointments/**
+              filters:
+                - StripPrefix=1
+                - JwtValidation
+            - id: billing-service-route
+              uri: http://billing-service:4001
+              predicates:
+                - Path=/api/billing/**
+              filters:
+                - StripPrefix=1
+                - JwtValidation

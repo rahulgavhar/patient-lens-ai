@@ -1,0 +1,126 @@
+# Basic .gitignore for Spring Boot microservices (multi-module)
+# Adapted for Maven and Gradle projects, common IDEs, Docker, and local dev files
+
+# ----------------
+# OS files
+# ----------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ----------------
+# IDEs / Editors
+# ----------------
+# IntelliJ
+/.idea/
+*.iml
+*.iws
+/out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# VS Code
+.vscode/
+
+# NetBeans
+nbproject/private/
+
+# ----------------
+# Java / Build
+# ----------------
+# Compiled class files
+*.class
+
+# Package files
+*.jar
+*.war
+*.ear
+*.nar
+
+# Build output
+/target/
+/build/
+
+# Generated sources
+/generated-sources/
+/generated-test-sources/
+
+# Maven
+dependency-reduced-pom.xml
+release.properties
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+
+# Gradle
+.gradle/
+**/build/
+
+# ----------------
+# Logs, reports, coverage
+# ----------------
+*.log
+logs/
+*.log.*
+*.out
+test-output/
+coverage-reports/
+jacoco.exec
+
+# ----------------
+# Docker
+# ----------------
+# Docker config and build artifacts
+docker-compose.override.yml
+docker-compose.local.yml
+*.tar
+
+# ----------------
+# Environment / secrets
+# ----------------
+.env
+.env.*
+*.env
+application-local.properties
+application-local.yml
+# Ignore local, sensitive files that may contain secrets
+secrets.properties
+credentials.yml
+
+# Keystores and certificates
+*.jks
+*.keystore
+*.p12
+
+# ----------------
+# Protobuf / plugin outputs
+# ----------------
+/protoc-dependencies/
+/protoc-plugins/
+
+# ----------------
+# Misc
+# ----------------
+hs_err_pid*
+replay_pid*
+*.tmp
+*.temp
+*.swp
+
+context/
+./context/
+dist/
+node_modules/
+**/node_modules/
+**/dist/
+frontend/node_modules/
+frontend/dist/
+target/
+**/target/
+# Keep track of generated IDE project files? Uncomment if you want to track
+# /.idea/
+
+# End of file

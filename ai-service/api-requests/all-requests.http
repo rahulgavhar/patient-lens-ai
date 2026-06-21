@@ -1,0 +1,83 @@
+### Health Check
+GET {{baseUrl}}/
+Accept: application/json
+
+###
+
+### ============================================
+### STEP 1: Upload PDFs First
+### ============================================
+
+### Upload One PDF
+POST {{baseUrl}}/upload_pdfs
+Content-Type: multipart/form-data; boundary=UploadBoundary
+
+--UploadBoundary
+Content-Disposition: form-data; name="files"; filename="sample.pdf"
+Content-Type: application/pdf
+
+< {{pdfPath}}
+--UploadBoundary--
+
+###
+
+### Upload Two PDFs
+POST {{baseUrl}}/upload_pdfs
+Content-Type: multipart/form-data; boundary=UploadBoundary
+
+--UploadBoundary
+Content-Disposition: form-data; name="files"; filename="sample-1.pdf"
+Content-Type: application/pdf
+
+< {{pdfPath}}
+--UploadBoundary
+Content-Disposition: form-data; name="files"; filename="sample-2.pdf"
+Content-Type: application/pdf
+
+< {{pdfPath2}}
+--UploadBoundary--
+
+###
+
+### ============================================
+### STEP 2: Ask Questions After Upload
+### ============================================
+
+### Ask a Question Using Variable
+POST {{baseUrl}}/ask_question
+Content-Type: application/x-www-form-urlencoded
+
+question={{question}}
+
+###
+
+### Ask a Direct Custom Question
+POST {{baseUrl}}/ask_question
+Content-Type: application/x-www-form-urlencoded
+
+question=List the most important medical points from the uploaded document.
+
+###
+
+### Ask About Diagnosis
+POST {{baseUrl}}/ask_question
+Content-Type: application/x-www-form-urlencoded
+
+question=What diagnosis information is mentioned in the document?
+
+###
+
+### Ask About Treatment
+POST {{baseUrl}}/ask_question
+Content-Type: application/x-www-form-urlencoded
+
+question=What treatment options are discussed?
+
+###
+
+### Ask for Summary
+POST {{baseUrl}}/ask_question
+Content-Type: application/x-www-form-urlencoded
+
+question=Provide a brief summary of the key findings in the document.
+

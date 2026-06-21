@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package payment.events;
+option java_multiple_files = true;
+
+message PaymentEvent {
+  string paymentId = 1;
+  string appointmentId = 2;
+  string patientId = 3;
+  double amount = 4;
+  string status = 5; // e.g., "PAYMENT_COMPLETED", "PAYMENT_FAILED", "PAYMENT_REFUNDED"
+  int64 timestamp = 6;
+}

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "payment";
+option java_outer_classname = "PaymentServiceOuterClass";
+
+package payment;
+
+service PaymentService {
+  rpc ProcessPayment(PaymentRequest) returns (PaymentResponse);
+  rpc RefundPayment(RefundRequest) returns (RefundResponse);
+}
+
+message PaymentRequest {
+  string appointmentId = 1;
+  string patientId = 2;
+  double amount = 3;
+  string currency = 4;
+}
+
+message PaymentResponse {
+  string paymentId = 1;
+  string status = 2; // COMPLETED, FAILED
+  string gatewayTransactionId = 3;
+  string errorMessage = 4;
+}
+
+message RefundRequest {
+  string paymentId = 1;
+  string appointmentId = 2;
+}
+
+message RefundResponse {
+  string status = 1; // REFUNDED, FAILED
+  string errorMessage = 2;
+}
