@@ -42,6 +42,59 @@ public class PatientIntegrationTest {
                 .then()
                 .statusCode(200)
                 .contentType("application/json")
-                .body("patients", notNullValue());
+                .body("$", notNullValue());
+    }
+
+    @Test
+    public void shouldCreatePatientAndBillingAccountWithValidToken() {
+        String loginPayload = """
+            {
+                "email": "testuser@test.com",
+                "password": "password123"
+            }
+            """;
+
+        // Step 1: Login and extract token
+        String token = given()
+                .contentType("application/json")
+                .body(loginPayload)
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(200)
+                .contentType("application/json")
+                .body("token", notNullValue())
+                .extract()
+                .jsonPath()
+                .getString("token");
+
+        // Step 2: Create a patient
+        String uniqueEmail = "patient_" + System.currentTimeMillis() + "@example.com";
+        String patientPayload = """
+            {
+                "name": "Jane Doe",
+                "email": "%s",
+                "address": "123 Main St, Springfield",
+                "dateOfBirth": "1990-01-01",
+                "height": 170.0,
+                "weight": 65.0,
+                "bloodGroup": "A+",
+                "phoneNumber": "+1234567890",
+                "emergencyContact": "John Doe",
+                "insuranceProvider": "HealthCare Inc"
+            }
+            """.formatted(uniqueEmail);
+
+        given()
+                .header("Authorization", "Bearer " + token)
+                .contentType("application/json")
+                .body(patientPayload)
+                .when()
+                .post("/api/patients")
+                .then()
+                .statusCode(201)
+                .contentType("application/json")
+                .body("id", notNullValue())
+                .body("billingAccountId", notNullValue());
     }
 }
