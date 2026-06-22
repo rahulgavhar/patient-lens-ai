@@ -69,3 +69,9 @@ spring:
               filters:
                 - StripPrefix=1
                 - JwtValidation
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

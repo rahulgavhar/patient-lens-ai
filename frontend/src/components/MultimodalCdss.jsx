@@ -100,7 +100,7 @@ export default function MultimodalCdss({ token }) {
         formData.append('image', blob, 'sample_scan.jpg');
       }
 
-      const res = await fetch('http://localhost:4004/api/ai/multimodal-decision', {
+      const res = await fetch('https://wake-controller.onrender.com/api/ai/multimodal-decision', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -33,7 +33,7 @@ export default function AiAssistant({ token }) {
 
   const fetchChatHistory = async () => {
     try {
-      const response = await fetch('http://localhost:4004/api/ai/chat_history', {
+      const response = await fetch('https://wake-controller.onrender.com/api/ai/chat_history', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -98,7 +98,7 @@ export default function AiAssistant({ token }) {
     }
 
     try {
-      const response = await fetch('http://localhost:4004/api/ai/upload_pdfs', {
+      const response = await fetch('https://wake-controller.onrender.com/api/ai/upload_pdfs', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -152,7 +152,7 @@ export default function AiAssistant({ token }) {
     formData.append('question', userText);
 
     try {
-      const response = await fetch('http://localhost:4004/api/ai/ask_question', {
+      const response = await fetch('https://wake-controller.onrender.com/api/ai/ask_question', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

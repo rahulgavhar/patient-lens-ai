@@ -19,7 +19,7 @@ export default function Dashboard({ token, userRole, username, patients, doctors
     if (isAdmin) {
       const fetchAlerts = async () => {
         try {
-          const res = await fetch('http://localhost:4004/api/patients/sos/active', {
+          const res = await fetch('https://wake-controller.onrender.com/api/patients/sos/active', {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (res.ok) {
@@ -43,7 +43,7 @@ export default function Dashboard({ token, userRole, username, patients, doctors
   const triggerSOS = async () => {
     setSosSent(true);
     try {
-      await fetch('http://localhost:4004/api/patients/sos', {
+      await fetch('https://wake-controller.onrender.com/api/patients/sos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export default function Dashboard({ token, userRole, username, patients, doctors
 
   const dismissAlert = async (id) => {
     try {
-      await fetch(`http://localhost:4004/api/patients/sos/${id}/resolve`, {
+      await fetch(`https://wake-controller.onrender.com/api/patients/sos/${id}/resolve`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -79,7 +79,7 @@ export default function Dashboard({ token, userRole, username, patients, doctors
       const allInvoices = [];
       for (const p of patients) {
         try {
-          const res = await fetch(`http://localhost:4004/api/billing/invoices/patient/${p.id}`, {
+          const res = await fetch(`https://wake-controller.onrender.com/api/billing/invoices/patient/${p.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

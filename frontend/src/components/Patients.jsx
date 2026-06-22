@@ -38,7 +38,7 @@ export default function Patients({ token, userRole, patients, onPatientCreated }
     };
 
     try {
-      const response = await fetch('http://localhost:4004/api/patients', {
+      const response = await fetch('https://wake-controller.onrender.com/api/patients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

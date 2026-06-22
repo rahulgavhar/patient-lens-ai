@@ -40,7 +40,7 @@ export default function Doctors({ token, userRole, doctors, onDoctorCreated }) {
     };
 
     try {
-      const response = await fetch('http://localhost:4004/api/doctors', {
+      const response = await fetch('https://wake-controller.onrender.com/api/doctors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

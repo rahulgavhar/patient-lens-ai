@@ -18,7 +18,7 @@ export default function Analytics({ token }) {
     setError('');
     try {
       // 1. Fetch Aggregated Stats
-      const statsRes = await fetch('http://localhost:4004/api/analytics/stats', {
+      const statsRes = await fetch('https://wake-controller.onrender.com/api/analytics/stats', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -31,7 +31,7 @@ export default function Analytics({ token }) {
       }
 
       // 2. Fetch Detailed Records
-      const patientsRes = await fetch('http://localhost:4004/api/analytics/patients', {
+      const patientsRes = await fetch('https://wake-controller.onrender.com/api/analytics/patients', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

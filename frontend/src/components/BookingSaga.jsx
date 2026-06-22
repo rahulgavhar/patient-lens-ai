@@ -100,7 +100,7 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
     };
 
     try {
-      const response = await fetch('http://localhost:4004/api/appointments', {
+      const response = await fetch('https://wake-controller.onrender.com/api/appointments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
         await sleep(1000); // Wait for Kafka consumer to finish processing and write to billing DB
         
         try {
-          const invRes = await fetch(`http://localhost:4004/api/billing/invoices/appointment/${appointmentData.id}`, {
+          const invRes = await fetch(`https://wake-controller.onrender.com/api/billing/invoices/appointment/${appointmentData.id}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

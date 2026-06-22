@@ -18,7 +18,7 @@ export default function RegisterForm({ onBackToLogin }) {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:4004/auth/register', {
+      const response = await fetch('https://wake-controller.onrender.com/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

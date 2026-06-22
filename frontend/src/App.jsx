@@ -87,7 +87,7 @@ export default function App() {
         payload.username = emailOrUsername;
       }
 
-      const response = await fetch('http://localhost:4004/auth/login', {
+      const response = await fetch('https://wake-controller.onrender.com/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -133,7 +133,7 @@ export default function App() {
 
   const fetchPatients = async () => {
     try {
-      const res = await fetch('http://localhost:4004/api/patients', {
+      const res = await fetch('https://wake-controller.onrender.com/api/patients', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -151,7 +151,7 @@ export default function App() {
 
   const fetchDoctors = async () => {
     try {
-      const res = await fetch('http://localhost:4004/api/doctors', {
+      const res = await fetch('https://wake-controller.onrender.com/api/doctors', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

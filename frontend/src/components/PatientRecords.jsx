@@ -27,7 +27,7 @@ export default function PatientRecords({ token, userRole, username, patients }) 
     setLoading(true);
     try {
       // Fetch invoices
-      const invoicesRes = await fetch(`http://localhost:4004/api/billing/invoices/patient/${selectedPatientId}`, {
+      const invoicesRes = await fetch(`https://wake-controller.onrender.com/api/billing/invoices/patient/${selectedPatientId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -38,7 +38,7 @@ export default function PatientRecords({ token, userRole, username, patients }) 
       }
 
       // Fetch appointments
-      const apptRes = await fetch(`http://localhost:4004/api/appointments/patient/${selectedPatientId}`, {
+      const apptRes = await fetch(`https://wake-controller.onrender.com/api/appointments/patient/${selectedPatientId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
