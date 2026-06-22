@@ -1,4 +1,4 @@
-name: Build & Deploy Backend (AWS EKS)
+name: Build & Deploy Backend (Azure VM)
 
 on:
   push:
@@ -17,7 +17,7 @@ on:
       - '.github/workflows/deploy-backend.yml'
 
 jobs:
-  build-and-test:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -40,37 +40,58 @@ jobs:
           mvn -f "$service/pom.xml" clean package -DskipTests
         done
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v4
+    - name: Azure Login
+      uses: azure/login@v1
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: us-east-1
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Log in to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+    - name: Login to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
 
     - name: Build, Tag, and Push Docker Images
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        ACR_REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
         # Build gateway image
-        docker build -t $ECR_REGISTRY/patient-lens-gateway:$IMAGE_TAG ./api-gateway
-        docker push $ECR_REGISTRY/patient-lens-gateway:$IMAGE_TAG
+        docker build -t $ACR_REGISTRY/patient-lens-gateway:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-gateway:latest ./api-gateway
+        docker push $ACR_REGISTRY/patient-lens-gateway --all-tags
         
         # Build appointment service image
-        docker build -t $ECR_REGISTRY/patient-lens-appointment:$IMAGE_TAG ./appointment-service
-        docker push $ECR_REGISTRY/patient-lens-appointment:$IMAGE_TAG
+        docker build -t $ACR_REGISTRY/patient-lens-appointment:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-appointment:latest ./appointment-service
+        docker push $ACR_REGISTRY/patient-lens-appointment --all-tags
         
         # Build billing service image
-        docker build -t $ECR_REGISTRY/patient-lens-billing:$IMAGE_TAG ./billing-service
-        docker push $ECR_REGISTRY/patient-lens-billing:$IMAGE_TAG
+        docker build -t $ACR_REGISTRY/patient-lens-billing:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-billing:latest ./billing-service
+        docker push $ACR_REGISTRY/patient-lens-billing --all-tags
 
-    - name: Update Kubernetes Manifests
-      run: |
-        echo "Updating deployment image references to: ${{ github.sha }}"
-        # In a real environment, we would run kustomize or envsubst and apply to EKS
-        # aws eks update-kubeconfig --name patient-lens-cluster
-        # kubectl apply -f infrastructure/k8s/
+        # NOTE: Add additional docker build & push commands here for the other microservices 
+        # (e.g., patient-service, doctor-service, auth-service) as needed.
+
+    - name: Deploy to Azure VM via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USERNAME }}
+        key: ${{ secrets.VM_SSH_KEY }}
+        script: |
+          # 1. Login to ACR on the VM
+          echo ${{ secrets.ACR_PASSWORD }} | docker login ${{ secrets.ACR_LOGIN_SERVER }} -u ${{ secrets.ACR_USERNAME }} --password-stdin
+          
+          # 2. Navigate to deployment directory (assuming it exists on the VM)
+          cd /opt/patient-lens/infrastructure
+          
+          # 3. Export new image tag for docker-compose to pick up
+          export IMAGE_TAG=${{ github.sha }}
+          export ACR_REGISTRY=${{ secrets.ACR_LOGIN_SERVER }}
+          
+          # 4. Pull the latest images and recreate containers
+          docker-compose pull
+          docker-compose up -d --remove-orphans
+          
+          # 5. Clean up dangling images to save space
+          docker image prune -f
