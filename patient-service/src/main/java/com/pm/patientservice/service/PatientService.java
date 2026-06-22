@@ -9,10 +9,14 @@ import com.pm.patientservice.kafka.KafkaProducer;
 import com.pm.patientservice.mapper.PatientMapper;
 import com.pm.patientservice.model.Patient;
 import com.pm.patientservice.repository.PatientRepository;
+import com.pm.patientservice.model.SosAlert;
+import com.pm.patientservice.model.SosAlertStatus;
+import com.pm.patientservice.repository.SosAlertRepository;
+import com.pm.patientservice.dto.SosAlertDto;
 import org.springframework.stereotype.Service;
 import billing.BillingResponse;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -21,15 +25,18 @@ import java.util.stream.Collectors;
 public class PatientService {
 
     private final PatientRepository patientRepository;
+    private final SosAlertRepository sosAlertRepository;
     private final BillingServiceGrpcClient billingServiceGrpcClient;
     private final KafkaProducer kafkaProducer;
 
     public PatientService(
             PatientRepository patientRepository,
+            SosAlertRepository sosAlertRepository,
             BillingServiceGrpcClient billingServiceGrpcClient,
             KafkaProducer kafkaProducer
     ) {
         this.patientRepository = patientRepository;
+        this.sosAlertRepository = sosAlertRepository;
         this.billingServiceGrpcClient = billingServiceGrpcClient;
         this.kafkaProducer = kafkaProducer;
     }
@@ -136,5 +143,46 @@ public class PatientService {
         kafkaProducer.sendPatientHealthUpdated(updatedPatient);
 
         return PatientMapper.toDTO(updatedPatient);
+    }
+
+    public SosAlertDto triggerSos(SosAlertDto dto) {
+        SosAlert alert = new SosAlert();
+        alert.setPatientId(dto.getPatientId());
+        alert.setPatientName(dto.getPatientName());
+        alert.setTimestamp(LocalDateTime.now());
+        alert.setStatus(SosAlertStatus.ACTIVE);
+        
+        SosAlert savedAlert = sosAlertRepository.save(alert);
+        
+        SosAlertDto responseDto = new SosAlertDto();
+        responseDto.setId(savedAlert.getId());
+        responseDto.setPatientId(savedAlert.getPatientId());
+        responseDto.setPatientName(savedAlert.getPatientName());
+        responseDto.setTimestamp(savedAlert.getTimestamp());
+        responseDto.setStatus(savedAlert.getStatus());
+        
+        return responseDto;
+    }
+
+    public List<SosAlertDto> getActiveSosAlerts() {
+        return sosAlertRepository.findByStatusOrderByTimestampDesc(SosAlertStatus.ACTIVE)
+                .stream()
+                .map(alert -> {
+                    SosAlertDto dto = new SosAlertDto();
+                    dto.setId(alert.getId());
+                    dto.setPatientId(alert.getPatientId());
+                    dto.setPatientName(alert.getPatientName());
+                    dto.setTimestamp(alert.getTimestamp());
+                    dto.setStatus(alert.getStatus());
+                    return dto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public void resolveSosAlert(Long id) {
+        sosAlertRepository.findById(id).ifPresent(alert -> {
+            alert.setStatus(SosAlertStatus.RESOLVED);
+            sosAlertRepository.save(alert);
+        });
     }
 }

@@ -1,16 +1,77 @@
 import React, { useEffect, useState } from 'react';
-import { Users, UserCheck, Receipt, DollarSign, Activity, CalendarCheck } from 'lucide-react';
+import { Users, UserCheck, Receipt, DollarSign, Activity, CalendarCheck, AlertTriangle } from 'lucide-react';
 
-export default function Dashboard({ token, userRole, patients, doctors }) {
+export default function Dashboard({ token, userRole, username, patients, doctors }) {
   const isPatient = userRole === 'PATIENT';
+  const isAdmin = userRole === 'ADMIN';
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sosAlerts, setSosAlerts] = useState([]);
+  const [sosSent, setSosSent] = useState(false);
 
   useEffect(() => {
     if (patients.length > 0 && token) {
       fetchInvoices();
     }
-  }, [patients, token]);
+    
+    // Listen for SOS alerts if admin
+    let intervalId;
+    if (isAdmin) {
+      const fetchAlerts = async () => {
+        try {
+          const res = await fetch('http://localhost:4004/api/patients/sos/active', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setSosAlerts(data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch SOS alerts:", err);
+        }
+      };
+      
+      fetchAlerts(); // initial fetch
+      intervalId = setInterval(fetchAlerts, 5000); // poll every 5s
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [patients, token, isAdmin]);
+
+  const triggerSOS = async () => {
+    setSosSent(true);
+    try {
+      await fetch('http://localhost:4004/api/patients/sos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          patientId: username || 'anonymous',
+          patientName: username || 'Anonymous Patient'
+        })
+      });
+    } catch (err) {
+      console.error("Failed to send SOS:", err);
+    }
+    
+    setTimeout(() => setSosSent(false), 5000); // Reset button after 5s
+  };
+
+  const dismissAlert = async (id) => {
+    try {
+      await fetch(`http://localhost:4004/api/patients/sos/${id}/resolve`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      setSosAlerts(prev => prev.filter(a => a.id !== id));
+    } catch (err) {
+      console.error("Failed to resolve alert:", err);
+    }
+  };
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -64,7 +125,39 @@ export default function Dashboard({ token, userRole, patients, doctors }) {
           <h2>Dashboard</h2>
           <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>{getGreeting()}. {getSubtitle()}</p>
         </div>
+        {isPatient && (
+          <button 
+            className={`btn ${sosSent ? 'btn-secondary' : 'btn-danger'}`} 
+            onClick={triggerSOS}
+            disabled={sosSent}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 'bold' }}
+          >
+            <AlertTriangle size={18} />
+            {sosSent ? 'SOS SENT' : 'EMERGENCY SOS'}
+          </button>
+        )}
       </div>
+
+      {isAdmin && sosAlerts.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem' }}>
+          {sosAlerts.map(alert => (
+            <div key={alert.id} className="fade-in" style={{ background: 'rgba(244, 63, 94, 0.15)', border: '1px solid rgba(244, 63, 94, 0.4)', borderRadius: 'var(--radius-md)', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ background: 'rgba(244, 63, 94, 0.2)', padding: '0.5rem', borderRadius: '50%', color: '#fb7185' }}>
+                  <AlertTriangle size={24} style={{ animation: 'pulse-glow 1s infinite alternate' }} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, color: '#fb7185', fontWeight: '700' }}>EMERGENCY ALERT: {alert.patientName}</h4>
+                  <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Triggered at {new Date(alert.timestamp).toLocaleString()}</p>
+                </div>
+              </div>
+              <button className="btn btn-secondary" onClick={() => dismissAlert(alert.id)} style={{ borderColor: 'rgba(244, 63, 94, 0.3)', color: '#fb7185' }}>
+                Acknowledge & Dismiss
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="metrics-grid">
         {/* Card 1: Total Patients (Admin/Doctor) OR My Payments (Patient) */}

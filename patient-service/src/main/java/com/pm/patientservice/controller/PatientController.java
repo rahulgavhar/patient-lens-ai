@@ -85,4 +85,24 @@ public class PatientController {
         PatientResponseDTO updatedHealth = patientService.updatePatientHealth(id, patientRequestDTO);
         return ResponseEntity.ok(updatedHealth);
     }
+
+    @PostMapping("/sos")
+    @Operation(summary = "Trigger SOS Alert", description = "Create a new active SOS alert for a patient")
+    public ResponseEntity<com.pm.patientservice.dto.SosAlertDto> triggerSos(
+            @RequestBody com.pm.patientservice.dto.SosAlertDto sosAlertDto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(patientService.triggerSos(sosAlertDto));
+    }
+
+    @GetMapping("/sos/active")
+    @Operation(summary = "Get active SOS Alerts", description = "Retrieve all currently active SOS alerts")
+    public ResponseEntity<List<com.pm.patientservice.dto.SosAlertDto>> getActiveSosAlerts() {
+        return ResponseEntity.ok(patientService.getActiveSosAlerts());
+    }
+
+    @PutMapping("/sos/{id}/resolve")
+    @Operation(summary = "Resolve SOS Alert", description = "Mark an active SOS alert as resolved")
+    public ResponseEntity<Void> resolveSosAlert(@PathVariable Long id) {
+        patientService.resolveSosAlert(id);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -365,7 +365,7 @@ export default function App() {
       {/* Main Panel Viewport */}
       <main className="main-content">
         {activeTab === 'dashboard' && (
-          <Dashboard token={token} userRole={userRole} patients={patients} doctors={doctors} />
+          <Dashboard token={token} userRole={userRole} username={username} patients={patients} doctors={doctors} />
         )}
         {activeTab === 'patients' && hasPermission('patients') && (
           <Patients token={token} userRole={userRole} patients={patients} onPatientCreated={(newP) => setPatients(prev => [...prev, newP])} />
