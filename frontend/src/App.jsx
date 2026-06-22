@@ -22,8 +22,8 @@ export default function App() {
   const [currentView, setCurrentView] = useState('landing');
   
   // Credentials form state (email or username)
-  const [emailOrUsername, setEmailOrUsername] = useState('admin');
-  const [password, setPassword] = useState('password123');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -32,14 +32,6 @@ export default function App() {
   const [patients, setPatients] = useState([]);
   const [doctors, setDoctors] = useState([]);
 
-  // Auto-switch credentials placeholder for demo convenience
-  useEffect(() => {
-    if (isRegisterMode) return;
-    // Default demo credentials
-    if (emailOrUsername === 'admin' || emailOrUsername === 'dr.house' || emailOrUsername === 'john.doe') {
-      setPassword('password123');
-    }
-  }, [emailOrUsername, isRegisterMode]);
 
   useEffect(() => {
     if (token) {
@@ -371,7 +363,7 @@ export default function App() {
           <Patients token={token} userRole={userRole} patients={patients} onPatientCreated={(newP) => setPatients(prev => [...prev, newP])} />
         )}
         {activeTab === 'patient-records' && hasPermission('patient-records') && (
-          <PatientRecords token={token} userRole={userRole} username={username} patients={patients} />
+          <PatientRecords token={token} userRole={userRole} username={username} userEmail={userEmail} patients={patients} doctors={doctors} />
         )}
         {activeTab === 'doctors' && hasPermission('doctors') && (
           <Doctors token={token} userRole={userRole} doctors={doctors} onDoctorCreated={(newD) => setDoctors(prev => [...prev, newD])} />

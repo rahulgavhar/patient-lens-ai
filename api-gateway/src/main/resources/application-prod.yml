@@ -69,3 +69,10 @@ spring:
               filters:
                 - StripPrefix=1
                 - JwtValidation
+            - id: medical-record-service-route
+              uri: http://host.docker.internal:4007
+              predicates:
+                - Path=/api/medical-records/**
+              filters:
+                - StripPrefix=1
+                - JwtValidation

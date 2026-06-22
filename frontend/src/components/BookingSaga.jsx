@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, CreditCard, BellRing, Radio, Sparkles, Terminal, FileText, AlertCircle } from 'lucide-react';
+import { ShieldCheck, CreditCard, BellRing, Radio, Sparkles, Terminal, FileText, AlertCircle, X } from 'lucide-react';
 
 export default function BookingSaga({ token, userRole, patients, doctors, onBookingComplete }) {
   const isPatient = userRole === 'PATIENT';
@@ -9,6 +9,11 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
   const [amount, setAmount] = useState('150.00');
   const [slotDatetime, setSlotDatetime] = useState('');
   const [doctorSearchTerm, setDoctorSearchTerm] = useState('');
+
+  // Symptom Intake Assistant States
+  const [symptomDescription, setSymptomDescription] = useState('');
+  const [symptomIntakeResult, setSymptomIntakeResult] = useState(null);
+  const [symptomLoading, setSymptomLoading] = useState(false);
 
   // Saga State
   const [sagaRunning, setSagaRunning] = useState(false);
@@ -43,6 +48,12 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
     }
   }, [patients, doctors]);
 
+  // Reset symptom analysis if patient/doctor changes
+  useEffect(() => {
+    setSymptomIntakeResult(null);
+    setSymptomDescription('');
+  }, [patientId, doctorId]);
+
   const addLog = (msg, type = 'info') => {
     const time = new Date().toLocaleTimeString();
     setSagaLogs(prev => [...prev, { time, msg, type }]);
@@ -55,6 +66,63 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
       }
       return s;
     }));
+  };
+
+  const handleAnalyzeSymptoms = async () => {
+    if (!symptomDescription.trim()) return;
+    setSymptomLoading(true);
+    setSymptomIntakeResult(null);
+
+    try {
+      const res = await fetch('https://wake-controller.onrender.com/api/ai/symptom-intake', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ symptoms: symptomDescription })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setSymptomIntakeResult(data);
+        
+        // Auto-trigger SOS for Emergency triage score, recommendation, or severity
+        const sev = (data.severity || '').toLowerCase();
+        const tri = (data.recommendedTriage || '').toLowerCase();
+        if (data.triageScore === 3 || sev.includes('emergency') || tri.includes('emergency')) {
+          triggerSosForEmergency();
+        }
+      } else {
+        alert("Failed to analyze symptoms. Ensure the AI service is online.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Network error: Failed to reach AI symptom intake assistant.");
+    } finally {
+      setSymptomLoading(false);
+    }
+  };
+
+  const triggerSosForEmergency = async () => {
+    const selectedPatient = patients.find(p => p.id === patientId);
+    try {
+      await fetch('https://wake-controller.onrender.com/api/patients/sos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          patientId: selectedPatient?.id || 'anonymous',
+          patientName: selectedPatient?.name || 'Emergency Walk-in'
+        })
+      });
+      addLog(`[SAFETY PROTOCOL] AI Triage registered an EMERGENCY. Broadcasted SOS dispatch to hospital responders automatically.`, 'info');
+      alert("⚠️ CLINICAL EMERGENCY DETECTED: Based on your description, the AI triage has flagged this as an emergency. A priority hospital responder alert has been dispatched automatically.");
+    } catch (err) {
+      console.error("Failed to send automatic emergency SOS:", err);
+    }
   };
 
   const handleBooking = async (e) => {
@@ -96,7 +164,8 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
       patientId,
       doctorId,
       slotDatetime,
-      amount: parseFloat(amount)
+      amount: parseFloat(amount),
+      symptomIntake: symptomIntakeResult ? JSON.stringify(symptomIntakeResult) : ""
     };
 
     try {
@@ -198,15 +267,15 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
 
     } catch (err) {
       updateStepState(2, 'failed');
+      addLog(`Network Error: ${err.message}`, 'info');
       setBookingStatus('FAILED');
-      setErrorMessage(isPatient ? 'Network connection lost. Please try again.' : 'Network connection lost to API Gateway. Cannot complete Saga.');
-      addLog(`System Error: ${err.message}`, 'info');
+      setErrorMessage("System Connection Error: Failed to orchestrate Saga transaction.");
     } finally {
       setSagaRunning(false);
     }
   };
 
-  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const sleep = (ms) => new RegExp('NaN').test(ms) ? Promise.resolve() : new Promise(resolve => setTimeout(resolve, ms));
 
   const filteredDoctors = doctors.filter(d => 
     d.name.toLowerCase().includes(doctorSearchTerm.toLowerCase()) || 
@@ -215,59 +284,124 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
 
   return (
     <div className="fade-in">
+      <style>{`
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .saga-timeline {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+          position: relative;
+          padding-left: 0.5rem;
+        }
+
+        .saga-timeline .saga-step {
+          display: flex;
+          flex-direction: row;
+          align-items: flex-start;
+          gap: 1.25rem;
+          width: 100%;
+          text-align: left;
+        }
+
+        .saga-timeline .saga-step-icon {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          background: #1e293b;
+          border: 2px solid #334155;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--color-text-muted);
+          flex-shrink: 0;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          z-index: 2;
+        }
+
+        .saga-timeline .saga-step.pending .saga-step-icon {
+          background: rgba(6, 182, 212, 0.05);
+          border-color: var(--color-primary);
+          color: var(--color-primary);
+          animation: pulse-glow-timeline 1.5s infinite alternate;
+        }
+
+        .saga-timeline .saga-step.completed .saga-step-icon {
+          background: var(--color-success);
+          border-color: var(--color-success);
+          color: white;
+          box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+        }
+
+        .saga-timeline .saga-step.failed .saga-step-icon {
+          background: var(--color-accent);
+          border-color: var(--color-accent);
+          color: white;
+          box-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+        }
+
+        @keyframes pulse-glow-timeline {
+          0% {
+            box-shadow: 0 0 5px rgba(6, 182, 212, 0.2);
+            border-color: rgba(6, 182, 212, 0.6);
+          }
+          100% {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.6);
+            border-color: rgba(6, 182, 212, 1);
+          }
+        }
+
+        .saga-timeline .saga-step-info {
+          display: flex;
+          flex-direction: column;
+          gap: 0.15rem;
+        }
+
+        .saga-timeline .saga-step-info h4 {
+          font-family: var(--font-heading);
+          font-size: 0.95rem;
+          font-weight: 600;
+          color: var(--color-text-primary);
+          margin: 0;
+        }
+
+        .saga-timeline .saga-step-info p {
+          font-size: 0.8rem;
+          color: var(--color-text-secondary);
+          margin: 0;
+        }
+      `}</style>
+
       <div className="app-header">
         <div>
-          <h2>{isPatient ? 'Book an Appointment' : 'Saga Appointment Portal'}</h2>
+          <h2>Appointment Scheduling</h2>
           <p style={{ color: 'var(--color-text-secondary)', marginTop: '0.25rem' }}>{isPatient ? 'Schedule a secure visit with your doctor.' : 'Experience gRPC transactions and Kafka compensating rollbacks in real time.'}</p>
         </div>
       </div>
 
-      <div className="panel-grid">
-        <div className="panel glass">
-          <h3 className="section-title">
-            <ShieldCheck size={20} /> {isPatient ? 'Booking Progress' : 'Saga Orchestrator Pipeline'}
-          </h3>
-
-          <div className="saga-visualizer">
-            <div className="saga-header">
-              <div>
-                <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status Tracker</span>
-                <h4 style={{ color: sagaRunning ? 'var(--color-primary)' : 'inherit', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
-                  {sagaRunning ? (
-                    <>
-                      <span className="badge badge-info" style={{ animation: 'pulse-glow 1s infinite alternate' }}>{isPatient ? 'Processing' : 'Processing Saga'}</span>
-                    </>
-                  ) : bookingStatus === 'SUCCESS' ? (
-                    <span className="badge badge-success">{isPatient ? 'Confirmed' : 'Saga Committed'}</span>
-                  ) : bookingStatus === 'FAILED' ? (
-                    <span className="badge badge-danger">{isPatient ? 'Failed' : 'Saga Rolled Back'}</span>
-                  ) : (
-                    <span className="badge badge-info" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-secondary)' }}>Ready</span>
-                  )}
-                </h4>
-              </div>
-            </div>
-
-            <div className="saga-steps-container">
-              <div className="saga-connector-line"></div>
-              <div 
-                className="saga-connector-line-progress" 
-                style={{ 
-                  width: `${
-                    steps.filter(s => s.state === 'completed').length * 22.5
-                  }%` 
-                }}
-              ></div>
-              
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2.5rem' }}>
+        {/* Saga Visualizer Console */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div className="panel glass">
+            <h3 className="section-title">
+              <ShieldCheck size={20} /> Saga Transaction Orchestrator
+            </h3>
+            
+            <div className="saga-timeline" style={{ marginTop: '1.5rem' }}>
               {steps.map((step) => {
-                const IconComponent = step.icon;
+                const Icon = step.icon;
                 return (
                   <div key={step.id} className={`saga-step ${step.state}`}>
-                    <div className="saga-step-node">
-                      <IconComponent />
+                    <div className="saga-step-icon">
+                      <Icon size={18} />
                     </div>
-                    <div className="saga-step-label">{step.name}</div>
-                    <div style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)' }}>{step.desc}</div>
+                    <div className="saga-step-info">
+                      <h4>{step.name}</h4>
+                      <p>{step.desc}</p>
+                    </div>
                   </div>
                 );
               })}
@@ -275,10 +409,10 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
           </div>
 
           {!isPatient && (
-            <div style={{ marginTop: '2rem' }}>
-              <h4 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontSize: '0.95rem' }}>
+            <div className="panel glass" style={{ flexGrow: 1 }}>
+              <h3 className="section-title">
                 <Terminal size={16} /> Live Orchestration Logs
-              </h4>
+              </h3>
               <div className="live-logger">
                 {sagaLogs.length === 0 ? (
                   <div className="log-entry" style={{ color: 'var(--color-text-muted)' }}>Waiting to trigger saga...</div>
@@ -363,7 +497,102 @@ export default function BookingSaga({ token, userRole, patients, doctors, onBook
               <input type="datetime-local" className="form-input" required value={slotDatetime} onChange={(e) => setSlotDatetime(e.target.value)} />
             </div>
 
-            <div className="form-group">
+            {/* AI Symptom Intake Assistant Form Group */}
+            <div className="form-group" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '1rem' }}>
+              <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-text-primary)' }}>
+                <Sparkles size={14} style={{ color: 'var(--color-primary)' }} /> 
+                Symptom Intake Assistant (AI)
+              </label>
+              <textarea 
+                className="form-input" 
+                rows="3"
+                style={{ width: '100%', height: '90px', resize: 'vertical' }}
+                placeholder="Describe your symptoms (e.g. throbbing headache for 3 days, mild nausea, sensitive to light...)"
+                value={symptomDescription}
+                onChange={(e) => setSymptomDescription(e.target.value)}
+              />
+              
+              {symptomDescription.trim().length > 0 && (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  style={{ marginTop: '0.75rem', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', borderColor: 'var(--color-border-active)' }}
+                  onClick={handleAnalyzeSymptoms}
+                  disabled={symptomLoading}
+                >
+                  <Sparkles size={16} style={{ color: 'var(--color-primary)' }} /> 
+                  {symptomLoading ? 'AI Analyzing Symptoms...' : 'Analyze Symptoms with AI'}
+                </button>
+              )}
+
+              {symptomLoading && (
+                <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', border: '1px dashed var(--color-border)', textAlign: 'center' }}>
+                  <div style={{ border: '2px solid rgba(6, 182, 212, 0.1)', borderTop: '2px solid var(--color-primary)', borderRadius: '50%', width: '20px', height: '20px', animation: 'spin 1s linear infinite', margin: '0 auto 0.5rem' }}></div>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>Extracting clinical indicators...</span>
+                </div>
+              )}
+
+              {symptomIntakeResult && !symptomLoading && (
+                <div className="glass fade-in" style={{ marginTop: '1rem', padding: '1rem', border: '1px solid rgba(6, 182, 212, 0.3)', background: 'rgba(6, 182, 212, 0.02)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem', marginBottom: '0.75rem' }}>
+                    <span style={{ fontWeight: '700', fontSize: '0.8rem', color: 'var(--color-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>AI Intake Assessment</span>
+                    <button 
+                      type="button" 
+                      style={{ background: 'none', border: 'none', color: 'var(--color-text-secondary)', cursor: 'pointer' }}
+                      onClick={() => { setSymptomIntakeResult(null); setSymptomDescription(''); }}
+                      title="Clear analysis"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem' }}>
+                    <div>
+                      <span style={{ color: 'var(--color-text-muted)' }}>Main Symptoms:</span>{' '}
+                      <span style={{ color: 'var(--color-text-primary)', fontWeight: '500' }}>{symptomIntakeResult.symptoms}</span>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--color-text-muted)' }}>Duration:</span>{' '}
+                      <span style={{ color: 'var(--color-text-primary)' }}>{symptomIntakeResult.duration}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div>
+                        <span style={{ color: 'var(--color-text-muted)' }}>Severity:</span>{' '}
+                        <span className={`badge ${
+                          symptomIntakeResult.severity.toLowerCase().includes('emergency') || symptomIntakeResult.severity.toLowerCase().includes('severe')
+                            ? 'badge-danger'
+                            : symptomIntakeResult.severity.toLowerCase().includes('mod')
+                            ? 'badge-warning'
+                            : 'badge-success'
+                        }`}>
+                          {symptomIntakeResult.severity}
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--color-text-muted)' }}>Triage Care:</span>{' '}
+                        <span style={{ color: 'var(--color-primary)', fontWeight: '600' }}>{symptomIntakeResult.recommendedTriage}</span>
+                        {symptomIntakeResult.triageScore && (
+                          <span className={`badge ${
+                            symptomIntakeResult.triageScore === 3 ? 'badge-danger' : 
+                            symptomIntakeResult.triageScore === 2 ? 'badge-warning' : 'badge-success'
+                          }`} style={{ marginLeft: '0.5rem', fontSize: '0.7rem' }}>
+                            Priority {symptomIntakeResult.triageScore}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {symptomIntakeResult.associatedSymptoms && (
+                      <div>
+                        <span style={{ color: 'var(--color-text-muted)' }}>Associated:</span>{' '}
+                        <span style={{ color: 'var(--color-text-secondary)' }}>{symptomIntakeResult.associatedSymptoms}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="form-group" style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '1rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                 <label className="form-label" style={{ margin: 0 }}>Charge Amount ($)</label>
                 <div style={{ display: 'flex', gap: '0.25rem' }}>

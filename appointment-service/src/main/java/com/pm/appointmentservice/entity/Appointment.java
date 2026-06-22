@@ -34,6 +34,17 @@ public class Appointment {
     @Column(nullable = false)
     private double amount;
 
+    @Column(name = "symptom_intake", columnDefinition = "TEXT")
+    private String symptomIntake;
+
+    public String getSymptomIntake() {
+        return this.symptomIntake;
+    }
+
+    public void setSymptomIntake(String symptomIntake) {
+        this.symptomIntake = symptomIntake;
+    }
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

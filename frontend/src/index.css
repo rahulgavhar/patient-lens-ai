@@ -69,7 +69,8 @@ h1, h2, h3, h4, h5, h6 {
 /* App Container Layout */
 .app-container {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Sidebar Styling */
@@ -164,6 +165,8 @@ h1, h2, h3, h4, h5, h6 {
   max-width: 1400px;
   margin: 0 auto;
   width: calc(100% - 280px);
+  height: 100vh;
+  overflow-y: auto;
 }
 
 /* Top Appbar */

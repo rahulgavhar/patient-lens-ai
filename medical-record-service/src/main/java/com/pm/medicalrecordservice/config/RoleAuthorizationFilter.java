@@ -12,7 +12,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Extracts user identity from headers injected by the API Gateway.
+ * The Gateway has already validated the JWT token and forwards
+ * X-User-Email, X-User-Role, X-User-Username as trusted headers.
+ */
 public class RoleAuthorizationFilter extends OncePerRequestFilter {
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -22,12 +28,16 @@ public class RoleAuthorizationFilter extends OncePerRequestFilter {
         String username = request.getHeader("X-User-Username");
 
         if (role != null && !role.isBlank()) {
+            // Create authentication token with the role as a granted authority
+            // Spring Security expects "ROLE_" prefix for hasRole() checks
             UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    email != null ? email : username, null,
+                    email != null ? email : username,
+                    null,
                     List.of(new SimpleGrantedAuthority("ROLE_" + role))
             );
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
+
         filterChain.doFilter(request, response);
     }
 }

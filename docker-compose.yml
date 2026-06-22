@@ -126,6 +126,7 @@ services:
       - doctor-service
       - appointment-service
       - ai-service
+      - medical-record-service
     environment:
       AUTH_SERVICE_URL: http://auth-service:4005
 
@@ -190,6 +191,14 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_SQL_INIT_MODE: always
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PATIENT_SERVICE_URL: http://patient-service:4000
+      SPRING_MAIL_HOST: "none"
+      SPRING_MAIL_PORT: "587"
+      SPRING_MAIL_USERNAME: "no-reply@patientlens.com"
+      SPRING_MAIL_PASSWORD: "password"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+
 
   analytics-service:
     build:
@@ -225,5 +234,26 @@ services:
     environment:
       DATABASE_URL: postgresql://admin_user:password@postgres:5432/ai-service-db
       EMBEDDING_PROVIDER: local
+      PATIENT_SERVICE_URL: http://patient-service:4000
+      MEDICAL_RECORD_SERVICE_URL: http://medical-record-service:4007
+
+
+  medical-record-service:
+    build:
+      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/medical-record-service
+      dockerfile: Dockerfile
+    container_name: medical-record-service
+    ports:
+      - "4007:4007"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/medical-record-service-db
+      SPRING_DATASOURCE_USERNAME: admin_user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_SQL_INIT_MODE: always
+
 
 

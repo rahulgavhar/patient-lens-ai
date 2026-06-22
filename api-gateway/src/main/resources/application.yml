@@ -69,6 +69,14 @@ spring:
               filters:
                 - StripPrefix=1
                 - JwtValidation
+            - id: medical-record-service-route
+              uri: http://medical-record-service:4007
+              predicates:
+                - Path=/api/medical-records/**
+              filters:
+                - StripPrefix=1
+                - JwtValidation
+
 
 management:
   endpoints:

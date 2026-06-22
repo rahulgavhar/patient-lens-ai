@@ -11,6 +11,7 @@ on:
       - 'appointment-service/**'
       - 'payment-service/**'
       - 'notification-service/**'
+      - 'medical-record-service/**'
       - 'api-gateway/**'
       - 'infrastructure/**'
       - 'pom.xml'
@@ -96,6 +97,10 @@ jobs:
         # Build ai service image
         docker build -t $ACR_REGISTRY/patient-lens-ai:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-ai:latest ./ai-service
         docker push $ACR_REGISTRY/patient-lens-ai --all-tags
+
+        # Build medical record service image
+        docker build -t $ACR_REGISTRY/patient-lens-medical-record:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-medical-record:latest ./medical-record-service
+        docker push $ACR_REGISTRY/patient-lens-medical-record --all-tags
 
     - name: Deploy to Azure VM via SSH
       uses: appleboy/ssh-action@v1.0.3

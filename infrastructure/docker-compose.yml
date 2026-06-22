@@ -181,6 +181,15 @@ services:
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_SQL_INIT_MODE: always
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      PATIENT_SERVICE_URL: http://patient-service:4000
+      SPRING_MAIL_HOST: "none"
+      SPRING_MAIL_PORT: "587"
+      SPRING_MAIL_USERNAME: "no-reply@patientlens.com"
+      SPRING_MAIL_PASSWORD: "password"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+
+
     networks:
       - patient-network
 
@@ -217,6 +226,9 @@ services:
     environment:
       DATABASE_URL: postgresql://admin_user:password@postgres:5432/ai-service-db
       EMBEDDING_PROVIDER: local
+      PATIENT_SERVICE_URL: http://patient-service:4000
+      MEDICAL_RECORD_SERVICE_URL: http://medical-record-service:4007
+
     networks:
       - patient-network
 
@@ -231,6 +243,7 @@ services:
       - doctor-service
       - appointment-service
       - ai-service
+      - medical-record-service
     ports:
       - "4004:4004"
     environment:
@@ -240,6 +253,24 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+    networks:
+      - patient-network
+
+  medical-record-service:
+    image: ${ACR_REGISTRY}/patient-lens-medical-record:${IMAGE_TAG}
+    container_name: medical-record-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "4007"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/medical-record-service-db
+      SPRING_DATASOURCE_USERNAME: admin_user
+      SPRING_DATASOURCE_PASSWORD: password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_SQL_INIT_MODE: always
     networks:
       - patient-network
 
