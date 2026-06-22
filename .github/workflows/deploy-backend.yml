@@ -115,8 +115,8 @@ jobs:
           export ACR_REGISTRY=${{ secrets.ACR_LOGIN_SERVER }}
           
           # 4. Pull the latest images and recreate containers
-          docker-compose pull
-          docker-compose up -d --remove-orphans
+          docker compose pull
+          docker compose up -d --remove-orphans
           
           # 5. Clean up dangling images to save space
           docker image prune -f
