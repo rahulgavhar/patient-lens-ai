@@ -69,8 +69,33 @@ jobs:
         docker build -t $ACR_REGISTRY/patient-lens-billing:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-billing:latest ./billing-service
         docker push $ACR_REGISTRY/patient-lens-billing --all-tags
 
-        # NOTE: Add additional docker build & push commands here for the other microservices 
-        # (e.g., patient-service, doctor-service, auth-service) as needed.
+        # Build auth service image
+        docker build -t $ACR_REGISTRY/patient-lens-auth:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-auth:latest ./auth-service
+        docker push $ACR_REGISTRY/patient-lens-auth --all-tags
+
+        # Build patient service image
+        docker build -t $ACR_REGISTRY/patient-lens-patient:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-patient:latest ./patient-service
+        docker push $ACR_REGISTRY/patient-lens-patient --all-tags
+
+        # Build doctor service image
+        docker build -t $ACR_REGISTRY/patient-lens-doctor:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-doctor:latest ./doctor-service
+        docker push $ACR_REGISTRY/patient-lens-doctor --all-tags
+
+        # Build payment service image
+        docker build -t $ACR_REGISTRY/patient-lens-payment:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-payment:latest ./payment-service
+        docker push $ACR_REGISTRY/patient-lens-payment --all-tags
+
+        # Build analytics service image
+        docker build -t $ACR_REGISTRY/patient-lens-analytics:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-analytics:latest ./analytics-service
+        docker push $ACR_REGISTRY/patient-lens-analytics --all-tags
+
+        # Build notification service image
+        docker build -t $ACR_REGISTRY/patient-lens-notification:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-notification:latest ./notification-service
+        docker push $ACR_REGISTRY/patient-lens-notification --all-tags
+
+        # Build ai service image
+        docker build -t $ACR_REGISTRY/patient-lens-ai:$IMAGE_TAG -t $ACR_REGISTRY/patient-lens-ai:latest ./ai-service
+        docker push $ACR_REGISTRY/patient-lens-ai --all-tags
 
     - name: Deploy to Azure VM via SSH
       uses: appleboy/ssh-action@v1.0.3
