@@ -72,7 +72,15 @@ proxyRouter.use(createProxyMiddleware({
     proxyRes: (proxyRes: any, req: any, res: any) => {
       // When a response comes back
       stateManager.decrementActiveRequests();
-      stateManager.updateActivity(); // update lastActivityAt
+
+      // Smart activity tracking: Ignore root pings or common health check paths 
+      // often used by external cron jobs to keep Render awake.
+      const path = req.path || req.url;
+      const isCronPing = path === '/' || path === '/health' || path === '/favicon.ico' || path === '/robots.txt';
+      
+      if (!isCronPing) {
+        stateManager.updateActivity(); // update lastActivityAt
+      }
     },
     error: (err: any, req: any, res: any) => {
       stateManager.decrementActiveRequests();
