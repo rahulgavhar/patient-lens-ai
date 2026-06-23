@@ -75,6 +75,7 @@ public class AppointmentIntegrationTest {
 
         // Step 3: Verify that an invoice was generated in Billing Service directly (port 4001)
         given()
+                .header("X-User-Role", "ADMIN")
                 .when()
                 .get("http://localhost:4001/invoices/patient/" + patientId)
                 .then()
