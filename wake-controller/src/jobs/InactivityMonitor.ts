@@ -2,7 +2,7 @@ import cron from "node-cron";
 import { stateManager, VmState } from "../state/StateManager";
 import { azureVmService } from "../services/AzureVmService";
 
-const INACTIVITY_THRESHOLD_MS = 5 * 60 * 60 * 1000; // 5 hours
+const INACTIVITY_THRESHOLD_MS = 3 * 60 * 60 * 1000; // 3 hours
 
 export class InactivityMonitor {
   static start() {

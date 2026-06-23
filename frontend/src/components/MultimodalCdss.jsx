@@ -14,7 +14,7 @@ const PRESETS = [
     title: 'Chest X-Ray: Cardiomegaly Screen',
     text: '72-year-old female presenting with progressive orthopnea, bilateral pedal edema, and mild chest discomfort. Physical exam shows jugular venous distention. Clinical notes show suspected congestive cardiac failure.',
     sampleName: 'Cardiac Scan (Sample)',
-    imageUrl: 'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=500&auto=format&fit=crop&q=60' // cardiac style placeholder
+    imageUrl: 'https://images.unsplash.com/photo-1559757175-5700dde675bc?w=500&auto=format&fit=crop&q=60' // cardiac style placeholder
   },
   {
     id: 'fracture',

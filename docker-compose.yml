@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: default-db
     volumes:
-      - C:/Users/rahul/IdeaProjects/patient-lens-ai/infrastructure/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+      - ./infrastructure/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin_user -d default-db"]
       interval: 5s
@@ -42,7 +42,7 @@ services:
 
   auth-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/auth-service
+      context: ./auth-service
       dockerfile: Dockerfile
     container_name: auth-service
     ports:
@@ -59,7 +59,7 @@ services:
 
   billing-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/billing-service
+      context: ./billing-service
       dockerfile: Dockerfile
     container_name: billing-service
     ports:
@@ -72,7 +72,7 @@ services:
 
   doctor-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/doctor-service
+      context: ./doctor-service
       dockerfile: Dockerfile
     container_name: doctor-service
     ports:
@@ -90,7 +90,7 @@ services:
 
   patient-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/patient-service
+      context: ./patient-service
       dockerfile: Dockerfile
     container_name: patient-service
     ports:
@@ -114,7 +114,7 @@ services:
 
   api-gateway:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/api-gateway
+      context: ./api-gateway
       dockerfile: Dockerfile
     container_name: api-gateway
     ports:
@@ -132,7 +132,7 @@ services:
 
   appointment-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/appointment-service
+      context: ./appointment-service
       dockerfile: Dockerfile
     container_name: appointment-service
     ports:
@@ -152,7 +152,7 @@ services:
 
   payment-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/payment-service
+      context: ./payment-service
       dockerfile: Dockerfile
     container_name: payment-service
     ports:
@@ -173,7 +173,7 @@ services:
 
   notification-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/notification-service
+      context: ./notification-service
       dockerfile: Dockerfile
     container_name: notification-service
     ports:
@@ -202,7 +202,7 @@ services:
 
   analytics-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/analytics-service
+      context: ./analytics-service
       dockerfile: Dockerfile
     container_name: analytics-service
     ports:
@@ -221,7 +221,7 @@ services:
 
   ai-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/ai-service
+      context: ./ai-service
       dockerfile: Dockerfile
     container_name: ai-service
     ports:
@@ -230,7 +230,7 @@ services:
       postgres:
         condition: service_healthy
     env_file:
-      - C:/Users/rahul/IdeaProjects/patient-lens-ai/ai-service/.env
+      - ./ai-service/.env
     environment:
       DATABASE_URL: postgresql://admin_user:password@postgres:5432/ai-service-db
       EMBEDDING_PROVIDER: local
@@ -240,7 +240,7 @@ services:
 
   medical-record-service:
     build:
-      context: C:/Users/rahul/IdeaProjects/patient-lens-ai/medical-record-service
+      context: ./medical-record-service
       dockerfile: Dockerfile
     container_name: medical-record-service
     ports:
