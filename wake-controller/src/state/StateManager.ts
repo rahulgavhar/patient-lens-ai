@@ -1,3 +1,5 @@
+import { dbService } from "../services/DbService";
+
 export enum VmState {
   STOPPED = 'STOPPED',
   STARTING = 'STARTING',
@@ -10,6 +12,20 @@ class StateManager {
   private currentState: VmState = VmState.STOPPED;
   private lastActivityAt: Date = new Date();
   private activeRequests: number = 0;
+
+  constructor() {
+    this.syncFromDb();
+  }
+
+  private async syncFromDb(): Promise<void> {
+    try {
+      const dbDate = await dbService.getLastActivity();
+      this.lastActivityAt = dbDate;
+      console.log(`[StateManager] Initialized lastActivityAt from DB: ${dbDate}`);
+    } catch (err) {
+      console.error("[StateManager] Failed to sync lastActivityAt from DB:", err);
+    }
+  }
 
   getState(): VmState {
     return this.currentState;
@@ -25,7 +41,11 @@ class StateManager {
   }
 
   updateActivity(): void {
-    this.lastActivityAt = new Date();
+    const now = new Date();
+    this.lastActivityAt = now;
+    dbService.updateLastActivity(now).catch((err) => {
+      console.error("[StateManager] Failed to async update lastActivity in DB:", err);
+    });
   }
 
   getActiveRequests(): number {
