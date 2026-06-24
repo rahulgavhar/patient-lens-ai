@@ -15,6 +15,7 @@ class StateManager {
 
   constructor() {
     this.syncFromDb();
+    this.syncVmStateFromAzure();
   }
 
   private async syncFromDb(): Promise<void> {
@@ -24,6 +25,16 @@ class StateManager {
       console.log(`[StateManager] Initialized lastActivityAt from DB: ${dbDate}`);
     } catch (err) {
       console.error("[StateManager] Failed to sync lastActivityAt from DB:", err);
+    }
+  }
+
+  private async syncVmStateFromAzure(): Promise<void> {
+    try {
+      const { azureVmService } = await import("../services/AzureVmService");
+      const actualState = await azureVmService.checkVmState();
+      this.setState(actualState);
+    } catch (err) {
+      console.error("[StateManager] Failed to sync VM state from Azure:", err);
     }
   }
 

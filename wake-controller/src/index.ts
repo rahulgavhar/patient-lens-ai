@@ -46,3 +46,29 @@ app.listen(PORT, () => {
   // Start background jobs
   InactivityMonitor.start();
 });
+
+// Process event listeners for lifecycle logging and debugging
+process.on("exit", (code) => {
+  console.log(`[Process] Exiting with code: ${code}`);
+});
+
+process.on("SIGTERM", () => {
+  console.log("[Process] SIGTERM received. Container is being shut down or recycled by host.");
+});
+
+process.on("SIGINT", () => {
+  console.log("[Process] SIGINT received.");
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("[Process] Uncaught Exception:", err);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("[Process] Unhandled Rejection at:", promise, "reason:", reason);
+});
+
+// Keep-alive heartbeat interval to ensure event loop remains active
+setInterval(() => {
+  console.log(`[WakeController] Heartbeat - Uptime: ${Math.round(process.uptime() / 60)} minutes.`);
+}, 300000); // every 5 minutes

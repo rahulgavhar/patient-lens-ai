@@ -76,6 +76,35 @@ class AzureVmService {
       }, 3000);
     }
   }
+
+  async checkVmState(): Promise<VmState> {
+    if (this.client) {
+      try {
+        console.log(`[AzureVmService] Querying VM instance view for ${vmName}...`);
+        const vmInstance = await this.client.virtualMachines.instanceView(resourceGroupName, vmName);
+        const statuses = vmInstance.statuses || [];
+        const powerState = statuses.find(s => s.code && s.code.startsWith("PowerState/"));
+        if (powerState && powerState.code) {
+          console.log(`[AzureVmService] Queried actual VM status: ${powerState.code}`);
+          const code = powerState.code.toLowerCase();
+          if (code.includes("running")) {
+            return VmState.RUNNING;
+          } else if (code.includes("stopping") || code.includes("deallocating")) {
+            return VmState.STOPPING;
+          } else if (code.includes("starting")) {
+            return VmState.STARTING;
+          }
+        }
+        return VmState.STOPPED;
+      } catch (err) {
+        console.error("[AzureVmService] Error checking VM state from Azure:", err);
+        return VmState.ERROR;
+      }
+    } else {
+      console.log("[AzureVmService] (MOCK) VM status check: RUNNING");
+      return VmState.RUNNING;
+    }
+  }
 }
 
 export const azureVmService = new AzureVmService();
