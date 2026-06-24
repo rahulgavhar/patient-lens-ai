@@ -12,10 +12,13 @@ class StateManager {
   private currentState: VmState = VmState.STOPPED;
   private lastActivityAt: Date = new Date();
   private activeRequests: number = 0;
+  public readyPromise: Promise<void>;
 
   constructor() {
-    this.syncFromDb();
-    this.syncVmStateFromAzure();
+    this.readyPromise = this.syncFromDb();
+    this.readyPromise.then(() => {
+      this.syncVmStateFromAzure();
+    });
   }
 
   private async syncFromDb(): Promise<void> {
@@ -23,8 +26,16 @@ class StateManager {
       const dbDate = await dbService.getLastActivity();
       this.lastActivityAt = dbDate;
       console.log(`[StateManager] Initialized lastActivityAt from DB: ${dbDate}`);
+      
+      const dbVmState = await dbService.getVmState();
+      if (dbVmState && Object.values(VmState).includes(dbVmState as VmState)) {
+        this.currentState = dbVmState as VmState;
+        console.log(`[StateManager] Initialized vmState from DB: ${dbVmState}`);
+      } else {
+        console.log(`[StateManager] No vmState found in DB, defaulting to ${this.currentState}`);
+      }
     } catch (err) {
-      console.error("[StateManager] Failed to sync lastActivityAt from DB:", err);
+      console.error("[StateManager] Failed to sync state from DB:", err);
     }
   }
 
@@ -43,8 +54,13 @@ class StateManager {
   }
 
   setState(state: VmState): void {
-    console.log(`[StateManager] Transitioning state: ${this.currentState} -> ${state}`);
-    this.currentState = state;
+    if (this.currentState !== state) {
+      console.log(`[StateManager] Transitioning state: ${this.currentState} -> ${state}`);
+      this.currentState = state;
+      dbService.updateVmState(state).catch((err) => {
+        console.error("[StateManager] Failed to async update vmState in DB:", err);
+      });
+    }
   }
 
   getLastActivity(): Date {

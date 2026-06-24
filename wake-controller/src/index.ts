@@ -35,6 +35,21 @@ app.post("/wake", express.json(), async (req, res) => {
   }
 });
 
+// Readiness gate: block proxy requests until the Azure VM state is confirmed on startup.
+// /health and /status are always allowed through so Render health checks never fail.
+app.use("/", async (req, res, next) => {
+  const bypassPaths = ["/health", "/status", "/wake"];
+  if (bypassPaths.includes(req.path)) {
+    return next();
+  }
+  try {
+    await stateManager.readyPromise;
+  } catch {
+    // If Azure check failed, let the proxy router handle the request normally
+  }
+  next();
+});
+
 // All other requests go through the Proxy
 app.use("/", proxyRouter);
 

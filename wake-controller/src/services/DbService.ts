@@ -8,6 +8,7 @@ const mongoUri = process.env.MONGODB_URI || "";
 interface StateDocument {
   _id: string;
   lastActivityAt: Date;
+  vmState: string;
   updatedAt: Date;
 }
 
@@ -58,16 +59,51 @@ class DbService {
       try {
         await this.collection.updateOne(
           { _id: "wake_controller_state" },
-          { 
-            $set: { 
+          {
+            $set: {
               lastActivityAt: date,
               updatedAt: new Date()
-            } 
+            }
           },
           { upsert: true }
         );
       } catch (err) {
         console.error("[DbService] Error updating lastActivity in DB:", err);
+      }
+    }
+  }
+
+  async getVmState(): Promise<string | null> {
+    await this.ensureConnected();
+    if (this.collection) {
+      try {
+        const doc = await this.collection.findOne({ _id: "wake_controller_state" });
+        if (doc && doc.vmState) {
+          return doc.vmState;
+        }
+      } catch (err) {
+        console.error("[DbService] Error reading vmState from DB:", err);
+      }
+    }
+    return null;
+  }
+
+  async updateVmState(vmState: string): Promise<void> {
+    await this.ensureConnected();
+    if (this.collection) {
+      try {
+        await this.collection.updateOne(
+          { _id: "wake_controller_state" },
+          {
+            $set: {
+              vmState,
+              updatedAt: new Date()
+            }
+          },
+          { upsert: true }
+        );
+      } catch (err) {
+        console.error("[DbService] Error updating vmState in DB:", err);
       }
     }
   }
